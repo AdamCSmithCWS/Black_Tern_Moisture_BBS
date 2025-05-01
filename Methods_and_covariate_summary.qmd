@@ -1,0 +1,247 @@
+---
+title: "Methods and Results"
+format: docx
+editor: visual
+bibliography: references.bib
+---
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(bbsBayes2)
+library(patchwork)
+```
+
+## Methods
+
+We designed the model to estimate the effects of annual climate patterns on abundance of Black Terns observed during BBS surveys, while accounting for medium- and long-term population trends that were not associated with these climate patterns. We used two annual climate covariates: one that represented the local moisture conditions using the Standardized Precipitation Evapotranspiration Index (SPEI [@beguería]); and, a second that represented the North Atlantic Oscillation Index (NAOI, [@hurrell1995], accessed through <https://www.cpc.ncep.noaa.gov/products/precip/CWlink/pna/nao.shtml>) from the previous winter (January - June, on a 1-year lag, 18 - 12 months before the BBS surveys were conducted; following [@davis2023]). We fit three models: a base model that did not include climate data; a climate model that included the effects of SPEI and NAOI on the annual abundance; and a climate-plus-core model that also included the annual SPEI in the core of the species' range as a predictor on the annual abundance outside of the core. All of the models included spatially varying effects of the climate predictors and spatially varying population trends, so that these effects could vary across the species' range and so that information could be shared in a way that respects the geographic structure of the data [@thorson2023].
+
+### Moisture - SPEI
+
+We used SPEI as an indicator of the local annual moisture conditions that Black Terns would experience at the beginning of the breeding season. The SPEI is a multiscale, standardized index that characterizes moisture conditions over different time- scales prior to a given month (e.g., the previous 1-month or the previous 6 months). Negative SPEI values indicate drought or dry conditions , while positive SPEI values indicate relatively wet conditions . The SPEI data are spatially explicit (available as a spatial raster layer), and so we sumarised these data for a given year and a given spatial stratum (1-degree by 1-degree grid cell), so they would represent the moisture conditions specific to the area and time when the BBS surveys were conducted. We used a 15-month SPEI for the month of June in each year. This index captures the moisture conditions that birds experienced at the beginning of a given breeding season, based on the moisture balance from the previous 15 months (i.e., the preceding year plus the previous spring). We acknowledge that this 15-month period is somewhat arbitrary. We also compared this to an alternative where we modeled separate effects of both a 3-month SPEI (i.e., the moisture conditions from that spring) plus a 1-year lagged measure of 3-month SPEI from the previous June (i.e., the moisture conditions from the previous spring). This alternative model had lower out-of-sample predictive accuracy than the 15-month SPEI model (Table 1). We have not included detailed results from this model here, but the qualitative results were essentially the same as those for the model here.
+
+### NAOI
+
+We used the winter NAOI (January-May) from the previous year (NAOI from 18-12 months before each breeding season). The NAOI is an annual index that does not include a spatial component, so NAOI predictor values are the same across the species' range in each year. However, the models allowed the effect of the annual NAOI to vary in space (details below).
+
+#### Base model
+
+The base model was the spatially explicit GAMYE models described in [@smith2024]. In the GAMYE model, the population trajectory (pattern of annual abundance through time) is modeled as an additive combination of a non-linear smooth (i.e., the GAM component) and year-effects that model the annual fluctuations around the smooth (the YE component). In this particular version, we used a spatially explicit, hierarchical model structure to share information on the non-linear smooth component among strata. This spatial model allowed us to fit the model using a relatively fine-grained spatial stratification based on 1-degree longitude by 1-degree latitude grid ([@smith2024]). The spatially explicit aspects ensure that the medium- and long-term trends can vary among strata, but that trends in nearby strata are more similar than trends in strata further away. The model also included all of the parameters regularly included in models for the BBS data to account for variation among observers, among routes, and first-year observer start-up effects ([@edwards2023][@smith2024]).
+
+$$ C_{i,t,r,j}=Negative\ Binomial\left(\lambda_{i,t,r,j},\phi\right) $$
+
+$$ log\left(\lambda_{i,t,r,j}\right)=\alpha_i+\delta_{i,t}+\gamma_{i,t}+\eta Ι_{j,t}+\omega_j $$
+
+In the base model, we estimated the observed counts ($C_{r,j,t}$) of Black Terns on route-r, in stratum-i and year-t, by observer-j as as realizations of a negative binomial distribution, with mean $\lambda_{i,t,r,j}$ and inverse dispersion parameter $\phi$. The log of the mean ($\lambda_{i,t,r,j}$) of the negative binomial distribution was modeled as an additive combination of stratum-level intercepts ($\alpha_i$), the year-specific location along the stratum-level non-linear smooth ($\delta_{i,t}$), year-effects ($\gamma_{i,t}$), observer-effects ($\omega_j$), and a first-year observer-effect ($\eta I_{j,t}$). The year-effects ($\gamma_{i,t}$) in this model are random-effects that track annual fluctuations as departures from the medium- and long-term changes modeled by the smooths ($\delta_{i,t}$). In this base model, they are estimated for each stratum-i and year-t as a random variate drawn from a normal distribution centered on 0, and with an estimated standard deviation ($\gamma_{i,t} \sim Normal(0,\sigma_{\gamma_i})$). All of the data manipulation, model structure, and model fitting for the base model were conducted using the r-package bbsBayes2 [@edwards2023].
+
+#### Climate model
+
+We built the climate model by starting with the base model and adding a sub-model to estimate the year-effects using two climate-based predictors. With these predictors, the annual fluctuations in stratum-i and year-t ($\gamma_{i,t}$) were an additive combination of the effect of SPEI in that year and stratum ($\beta_{1_i}{SPEI}_{i,t}$), the effect of the NAOI in the previous year ($\beta_{2_i}{NAOI}_{t-1}$), and an additional random variate ($\varepsilon_{i,t} \sim Normal(0,\sigma_{\gamma_i})$).
+
+$$\gamma_{i,t}= \beta_{1_i}{SPEI}_{i,t}+\beta_{2_i}{NAOI}_{t-1}+\varepsilon_{i,t}$$
+
+The effects of both SPEI and NAOI were allowed to vary among strata, as spatially varying coefficients ([@thorson2023]). Each of the stratum-specific parameters for the effects of SPEI ($\beta_{1_i}$) and NAOI ($\beta_{2_i}$), were estimated as a combination of spatially-varying effects ($\beta_{1_i}^{\prime\prime}$), estimated with a zero-sum constraint and a hyperparameter ($\beta_1^{\prime}$) that represents the mean effect of each covariate across all strata.
+
+$$\beta_{1_i}=\beta_1^{\prime} + \beta_{1_i}^{\prime\prime}$$
+
+We estimated the spatially-varying component ($\beta_{1_i}^{\prime\prime}$) using the same intrinsic spatial conditional autoregressive (iCAR) neighbourhood matrix used to estimate the spatially varying smooths ([@smith2024]). This iCAR modelling structure estimates the stratum-level component for each covariate as a normally distributed variate, centered on the mean of the parameters in the surrounding strata, with an estimated among-strata standard deviation $\sigma_{\beta_1^{\prime\prime}}$ or $\sigma_{\beta_2^{\prime\prime}}$. So, the local component of the effect of SPEI on the annual relative abundance in stratum-i ($\beta_{1_i}^{\prime\prime}$) is a normal variate centered on the mean of the effect in the set $N_i$ of the $n_i$-strata that are direct neighbours of stratum-i. These spatially varying effects are estimated using a soft, sum-to-zero constraint ([@morris2019]) to ensure they are centered on the hyperparameter $\beta_1^{\prime}$, representing the mean effect across all strata.
+
+$$\beta_{1_i}^{\prime\prime}\sim Normal\left(\frac{\sum_{n \in N_i}\beta_{1_n}^{\prime\prime}}{n_i},\frac{\sigma_{\beta_{1}^{\prime\prime}}}{n_i}\right)$$
+
+#### Climate-plus-core model
+
+This model started with the climate model plus an effect of annual moisture in the core of the species' range ($SPEICORE_t$) on the annual abundance in strata outside of the core. We defined the core of the species range as strata that fall completely within the Prairie Potholes Bird Conservation Region (BCR 11, Figure 2). So, this effect of moisture in the core ($\beta_3$) only contributes to estimating the annual abundance in strata outside of the core, has a constant effect across all strata where it is relevant (i.e., it is not spatially varying), and has no effect on estimates within the core range. The term $P_i$ is an indicator variable that takes the value 0 for all strata inside the core of the species range and 1 for all strata outside of the core.
+
+$$\gamma_{i,t}= \beta_{1_i}{SPEI}_{i,t}+\beta_{2_i}{NAOI}_{t-1}+\beta_3P_i{SPEICORE}_{t}+\varepsilon_{i,t}$$
+
+We calculated the $SPEICORE_t$ values by averaging the $SPEI_{i,t}$ across all core strata for that year.
+
+### Trends
+
+In all models, the trends represent changes in Black Tern populations that are occurring on medium- to long-term time scales and not the result of annual variations. We estimated trends using only the smooth component of the model, after removing the effects of the annual fluctuations, following [@smith2024] and [@smith2021]. As a result, trends from the climate and climate-plus-core models represent changes in populations after removing the effects of variation in these annual factors.
+
+### Model Fit
+
+We compared the fit of the models to the BBS data using an approximate out-of-sample predictive accuracy metric for Bayesian models: estimated log predictive density (elpd, [@gelman2014][@vehtari2017]). This metric is an approximation of the ability for each model to accurately estimate data that were not used to fit the model, much like AIC [@burnham2002].
+
+### Parameter estimates
+
+For the effects of the climate predictors, we explored both the overall mean effects (hyperparameters e.g., $\beta_1^{\prime}$) as well as the spatial pattern in the spatially varying effects (e.g., $\beta_{1_i}^{\prime\prime}$). We report the posterior means as well as the upper and lower limits of the 90% highest posterior density interval as summaries of the posterior distributions of the estimates [@gelman2013]. Highest posterior density intervals are similar to standard percentile credible intervals, but are guaranteed to include the posterior mode.
+
+## Results
+
+Black Tern population trends over the entire survey area and for the long-term (1970-2022) are negative from all three models (Figure R1). Over the last three generations (2005-2022) survey-wide trends from the base model suggest a stable population, but removing the effects of the climatic variables in the climate and climate-plus-core models suggests that recent population trends may be positive overall (Figure R1).
+
+The spatial patterns in trends are generally similar among the three models (Figure R2). In the periphery of the range, long-term trends are almost all negative and recent trends are strongly negative. Within the core of the species' range, the long-term trends are generally negative except for one region in the southern part of the core range. Recent trends in the core range vary in space, with pockets of strong decreases along the western edge of the core, in much of Saskatchewan and Manitoba, and Minnesota and Iowa, contrasting with regions with relatively strong increases in Alberta and North and South Dakota (Figure R2).
+
+## Spatially varying effects of Spring Moisture
+
+The overall mean effect of SPEI on annual abundance was positive ($\beta_1^{\prime}=$ `r paste0(round(B1$mean,2)," [",round(B1$q5,2),"-",round(B1$q95,2),"]")`). The effects of SPEI varied across the species' range. It was strongest and clearly positive in the core of the species' range across the southern and central prairie pothole region. In the western and eastern periphery of the species' range the effect was only weakly positive or even slightly negative.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+
+cov_spei <- get_summary(fit_cov,variables = "beta_cov") %>%
+  mutate(strata = row_number(),
+         model = "covariate",
+         base_model = model,
+         predictor = "SPEI")
+
+# load original data
+ps <- readRDS(paste0("data/prepared_data_",sy,"-",ey,".rds"))
+
+base_map <- load_map(ps$meta_data$stratify_by) %>%
+  inner_join(ps$meta_strata,
+             by = "strata_name")
+
+bbox <- sf::st_bbox(base_map)
+
+strata_map <- load_map("bbs_usgs")
+
+map_spei <- base_map %>%
+  inner_join(.,cov_spei)
+
+
+spei_map <- ggplot()+
+  geom_sf(data = strata_map,
+          fill = "white")+
+  geom_sf(data = map_spei,
+          aes(fill = mean))+
+  colorspace::scale_fill_continuous_diverging(rev = TRUE,
+                                              palette = "Blue-Red 2")+
+  coord_sf(xlim = bbox[c("xmin","xmax")],
+           ylim = bbox[c("ymin","ymax")])+
+  labs(title = paste0("Effect of spring SPEI on annual abundance"))+
+  theme_bw()
+
+spei_map_q5 <- ggplot()+
+  geom_sf(data = strata_map,
+          fill = "white")+
+  geom_sf(data = map_spei,
+          aes(fill = q5))+
+  colorspace::scale_fill_continuous_diverging(rev = TRUE,
+                                              palette = "Blue-Red 2")+
+  coord_sf(xlim = bbox[c("xmin","xmax")],
+           ylim = bbox[c("ymin","ymax")])+
+  labs(title = paste0("Lower limit (90% CI)"))+
+  theme_bw()
+spei_map_q95 <- ggplot()+
+  geom_sf(data = strata_map,
+          fill = "white")+
+  geom_sf(data = map_spei,
+          aes(fill = q95))+
+  colorspace::scale_fill_continuous_diverging(rev = TRUE,
+                                              palette = "Blue-Red 2")+
+  coord_sf(xlim = bbox[c("xmin","xmax")],
+           ylim = bbox[c("ymin","ymax")])+
+  labs(title = paste0("Upper limit (90% CI)"))+
+  theme_bw()
+
+
+
+spei_all <- spei_map
+spei2 <- spei_map_q5 / spei_map_q95 #+ plot_layout(design = design)
+
+### NAOI
+
+cov_nao <- get_summary(fit_cov,variables = "beta_ann_cov") %>%
+  mutate(strata = row_number(),
+         model = "covariate",
+         base_model = model,
+         predictor = "NAOI")
+
+
+map_nao <- base_map %>%
+  inner_join(.,cov_nao,
+             by = "strata")
+
+
+nao_map <- ggplot()+
+  geom_sf(data = strata_map,
+          fill = "white")+
+  geom_sf(data = map_nao,
+          aes(fill = mean))+
+  colorspace::scale_fill_continuous_diverging(rev = TRUE,
+                                              palette = "Blue-Red 2")+
+  coord_sf(xlim = bbox[c("xmin","xmax")],
+           ylim = bbox[c("ymin","ymax")])+
+  labs(title = paste0("Effect of Jan-June NAO (1-year lag) \n on annual abundance"))+
+  theme_bw()
+
+
+nao_map_q5 <- ggplot()+
+  geom_sf(data = strata_map,
+          fill = "white")+
+  geom_sf(data = map_nao,
+          aes(fill = q5))+
+  colorspace::scale_fill_continuous_diverging(rev = TRUE,
+                                              palette = "Blue-Red 2")+
+  coord_sf(xlim = bbox[c("xmin","xmax")],
+           ylim = bbox[c("ymin","ymax")])+
+  labs(title = paste0("Lower limit (90% CI)"))+
+  theme_bw()
+nao_map_q95 <- ggplot()+
+  geom_sf(data = strata_map,
+          fill = "white")+
+  geom_sf(data = map_nao,
+          aes(fill = q95))+
+  colorspace::scale_fill_continuous_diverging(rev = TRUE,
+                                              palette = "Blue-Red 2")+
+  coord_sf(xlim = bbox[c("xmin","xmax")],
+           ylim = bbox[c("ymin","ymax")])+
+  labs(title = paste0("Upper limit (90% CI)"))+
+  theme_bw()
+nao_all <- nao_map
+nao2 <- nao_map_q5 / nao_map_q95
+
+
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#| fig-cap: 
+#|   - "Spatially varying effect of spring moisture (June, 3-month SPEI) on the annual relative abundance of Black Tern observed during BBS surveys. The colours in the map represent the mean effect in each of the 1-degree longitude by 1-degree latitude strata, where blue colours represent positive effects of moisture on abundance, red represents negative effects." 
+
+spei_all
+
+```
+
+{{< pagebreak >}}
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#| fig-cap: 
+#|   - "Maps representing the uncertainty in the effect of the SPEI. Left map represents the lower limit of the 90% Credible Interval and the right map represents the upper limit. Regions that are similar colours in both maps have local effects of SPEI where at least a 95% of the posterior probability is in the same direction (e.g., if regions are blue in both maps, at least 95% of the posterior probability of the effect is positive). In general, these maps show that the local effects of SPEI are clearly positive in the core of the species' range, but weaker and less certain in the western and eastern edges of the range."
+#| fig-height: 8
+
+spei2
+
+```
+
+## Spatially varying effects of North Atlantic Oscillation Index
+
+{{< pagebreak >}}
+
+The overall mean effect of NAOI on annual abundance was generally negative but with relatively high uncertainty ($\beta_2^{\prime}=$,`r paste0(round(B2$mean,2)," [",round(B2$q5,2),"-",round(B2$q95,2),"]")`). NAOI had the strongest negative effect in the western Great Lakes region and in the Canadian portion of the Prairie Pothole region. By contrast, in the southern part of the species' range, NAOI had a largely positive effect on annual abundance.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#| fig-cap: 
+#|   - "Spatially varying effect of the North Atlantic Oscillation (January - June in year t-1) on the annual relative abundance of Black Tern observed during BBS surveys. The top map shows the mean effect in each of the 1-degree longitude by 1-degree latitude strata, where red colours represent negative effects of NAOI on abundance, and blue represents negative effects." 
+
+nao_all
+
+```
+
+{{< pagebreak >}}
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#| fig-cap: 
+#|   - "Maps representing the uncertainty in the effect of the North Atlantic Oscillation. Left map represents the lower limit of the 90% Credible Interval and the right map represents the upper limit. Regions that are similar colours in both maps have local effects of NAOI where at least a 95% posterior probability is in the same direction. In general, these maps show that the negative effects of NAOI are somewhat uncertain, as there are no regions where the full 95% CI is below 0"
+#| fig-height: 8
+
+nao2
+
+```
+
+{{< pagebreak >}}
+
+{{< pagebreak >}}
+
+# References Cited

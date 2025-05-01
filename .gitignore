@@ -1,0 +1,10 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+/arch
+/data/too_large
+/figures
+/output
+
+
