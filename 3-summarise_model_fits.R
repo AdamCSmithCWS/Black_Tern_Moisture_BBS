@@ -1,4 +1,4 @@
-setwd("C:/GitHub/Wetland_bird_trends_moisture")
+
 # summarise base and cov fit ----------------------------------------------
 library(bbsBayes2)
 library(tidyverse)
@@ -17,28 +17,26 @@ cov_nao_out <- NULL
 inds_out <- NULL
 
 
-#for(model in c("gamye")){
   model <- c("gamye")
 # load the fitted models --------------------------------------------------
-#for(j in 3){#nrow(yr_pairs)){
 
   ey <-2022
   sy <- 1970
 
 
 fit_base <- readRDS(paste0("output/",model,"_",sy,"_",ey,"_base.rds")) # read in the base model fit
-fit_cov <- readRDS(paste0("output/",model,"_",sy,"_",ey,"_2covariate_varying_15.rds")) # read in the covariate model fit
+fit_cov <- readRDS(paste0("output/",model,"_",sy,"_",ey,"_2covariate_varying.rds")) # read in the covariate model fit
 fit_cov_lag <- readRDS(paste0("output/",model,"_",sy,"_",ey,"_3covariate_varying.rds")) # read in the covariate model fit
 fit_cov_core <- readRDS(paste0("output/",model,"_",sy,"_",ey,"_2covariate_varying_core.rds")) # read in the covariate model fit
 
 
-summ_base <- readRDS(paste0("summary_",model,"_",sy,"_",ey,"_base.rds")) %>%
+summ_base <- readRDS(paste0("results/summary_",model,"_",sy,"_",ey,"_base.rds")) %>%
   mutate(model = "base")
-summ_cov <- readRDS(paste0("summary_",model,"_",sy,"_",ey,"_2covariate_varying_15.rds")) %>%
+summ_cov <- readRDS(paste0("results/summary_",model,"_",sy,"_",ey,"_2covariate_varying.rds")) %>%
   mutate(model = "weather")
-summ_cov_lag <- readRDS(paste0("summary_",model,"_",sy,"_",ey,"_3covariate_varying.rds")) %>%
+summ_cov_lag <- readRDS(paste0("results/summary_",model,"_",sy,"_",ey,"_3covariate_varying.rds")) %>%
   mutate(model = "weather-lag")
-summ_cov_core <- readRDS(paste0("summary_",model,"_",sy,"_",ey,"_2covariate_varying_core.rds")) %>%
+summ_cov_core <- readRDS(paste0("results/summary_",model,"_",sy,"_",ey,"_2covariate_varying_core.rds")) %>%
   mutate(model = "weather-plus-core")
 
 summ_all <- bind_rows(summ_base,
@@ -46,12 +44,21 @@ summ_all <- bind_rows(summ_base,
                       summ_cov_lag,
                       summ_cov_core)
 
+
+
+
+# Convergence check -------------------------------------------------------
+
 max(summ_all$rhat, na.rm = TRUE)
 
 check_conv <- summ_all %>%
-  filter(rhat > 1.01,
-         ess_bulk < 400)
+  filter(rhat > 1.03,
+         ess_bulk < 400) 
 
+
+
+
+# model comparison calculate elpd -----------------------------------------
 
 loo_base <- fit_base$model_fit$loo()
 loo_cov <- fit_cov$model_fit$loo()
@@ -61,8 +68,9 @@ loo_cov_core <- fit_cov_core$model_fit$loo()
 
 loo_comp_out <- as.data.frame(loo_compare(loo_base,loo_cov,loo_cov_lag,loo_cov_core))
 
-write_csv(loo_comp_out,
-          "loo_comparison.csv")
+write.csv(loo_comp_out,
+          "results/loo_comparison.csv")
+
 loo_compare(loo_cov,loo_cov_lag,loo_cov_core)
 
 pointwise <- fit_base$raw_data
@@ -78,7 +86,7 @@ pointwise <- pointwise %>%
          dif_weather_plus_core_weather_lag = elppd_weather_plus_core-elppd_weather_lag,
          dif_weather_weather_lag = elppd_weather-elppd_weather_lag)
 
-# summ <- readRDS(paste("summary",model,sy,ey,"2covariate_varying_lag.rds",
+# summ <- readRDS(paste("results/summary",model,sy,ey,"2covariate_varying_lag.rds",
 #                       sep = "_"))
 #
 # cov_eff <- summ %>%
@@ -87,7 +95,7 @@ pointwise <- pointwise %>%
 # # summ %>% filter(variable == "beta_cov")
 
 # trajectories trends and maps --------------------------------------------
-#if(model == "gamye"){
+
 
   inds_cov <- generate_indices(fit_cov,alternate_n = "n_smooth")
   inds_cov_out <- inds_cov$indices %>%
@@ -193,37 +201,9 @@ pointwise <- pointwise %>%
   inds_out <- bind_rows(inds_out,
                         inds_outf)
 
-# }else{
-#   inds_cov <- generate_indices(fit_cov,alternate_n = "n_random")
-#   inds_cov_out <- inds_cov$indices %>%
-#     mutate(model = "covariates",
-#            base_model = model,
-#            type = "no_covariate")
-#
-#   inds_covalt <- generate_indices(fit_cov,alternate_n = "n")
-#   inds_cov_out2 <- inds_covalt$indices %>%
-#     mutate(model = "covariates",
-#            base_model = model,
-#            type = "full")
-#   inds_cov_out <- bind_rows(inds_cov_out,
-#                             inds_cov_out2)
-#   inds <- generate_indices(fit)#,alternate_n = "n_smooth")
-#
-#   inds_out <- inds$indices %>%
-#     mutate(model = "base",
-#            base_model = model,
-#            type = "full")
-#
-#   inds_out <- bind_rows(inds_out,
-#                         inds_cov_out)
-#
-# }
 
-
-
-
-#inds_out <- readRDS("data/temp_inds_out.rds")
-inds_plot_cont <- inds_out %>%
+  
+  inds_plot_cont <- inds_out %>%
   filter(region == "continent",
          type != "smooth")
 

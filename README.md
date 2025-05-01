@@ -1,6 +1,6 @@
-# Wetland_bird_trends_moisture
+# Black Tern trends and annual fluctuations
 
-## Collaborative project to separate annual fluctuations in wetland bird abundance from longer-term non-linear patterns in population change
+## Separating annual fluctuations in Black Tern bird abundance from longer-term non-linear patterns in population change
 
 Using data from the North American Breeding Bird Survey for Black Tern and annual covariates of moisture/drought, we modeled annual fluctuations and long-term population change. 
 

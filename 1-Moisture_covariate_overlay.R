@@ -1,6 +1,7 @@
 
 # Script to overlay the latlong stratification map with
 # SPEI moisture covariates
+# Generates the moisture covariates for the models
 
 library(terra)
 library(bbsBayes2)
