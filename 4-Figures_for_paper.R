@@ -307,7 +307,7 @@ spei_map <- ggplot2::ggplot() +
   ggplot2::geom_sf(data = political,
                    colour = "grey70", size = 0.1,
                    fill = NA) +
-  ggplot2::geom_sf(data = bcr11_core, fill = NA, linewidth = 0.5)+
+  ggplot2::geom_sf(data = bcr11_core, fill = NA, linewidth = 0.75)+
   ggplot2::coord_sf(xlim = bb[c("xmin","xmax")],
                     ylim = bb[c("ymin","ymax")])
 
@@ -328,7 +328,7 @@ spei_map_se <- ggplot2::ggplot() +
   ggplot2::geom_sf(data = political,
                    colour = "grey70", size = 0.1,
                    fill = NA) +
-  ggplot2::geom_sf(data = bcr11_core, fill = NA, linewidth = 0.5)+
+  ggplot2::geom_sf(data = bcr11_core, fill = NA, linewidth = 0.75)+
   ggplot2::coord_sf(xlim = bb[c("xmin","xmax")],
                     ylim = bb[c("ymin","ymax")])+
   facet_wrap(vars(param),
@@ -407,11 +407,11 @@ naoi_map <- ggplot2::ggplot() +
   map_theme +
   colorspace::scale_fill_continuous_diverging(rev = TRUE,
                                               palette = "Blue-Red")+
-  ggplot2::guides(fill = ggplot2::guide_colorbar())+
+  ggplot2::guides(fill = ggplot2::guide_colourbar(nbin = 7))+
   ggplot2::geom_sf(data = political,
                    colour = "grey70", size = 0.1,
                    fill = NA) +
-  ggplot2::geom_sf(data = bcr11_core, fill = NA, linewidth = 0.5)+
+  ggplot2::geom_sf(data = bcr11_core, fill = NA, linewidth = 0.75)+
   ggplot2::coord_sf(xlim = bb[c("xmin","xmax")],
                     ylim = bb[c("ymin","ymax")])
 
@@ -432,7 +432,7 @@ naoi_map_se <- ggplot2::ggplot() +
   ggplot2::geom_sf(data = political,
                    colour = "grey70", size = 0.1,
                    fill = NA) +
-  ggplot2::geom_sf(data = bcr11_core, fill = NA, linewidth = 0.5)+
+  ggplot2::geom_sf(data = bcr11_core, fill = NA, linewidth = 0.75)+
   ggplot2::coord_sf(xlim = bb[c("xmin","xmax")],
                     ylim = bb[c("ymin","ymax")])+
   facet_wrap(vars(param),
@@ -444,7 +444,7 @@ both <- naoi_map / naoi_map_se
 both
 
 
-pdf("final_figures/Figure4_alt.pdf",
+pdf("final_figures/Figure4.pdf",
     width = 3.5,height = 5.5)
 print(both)
 dev.off()
