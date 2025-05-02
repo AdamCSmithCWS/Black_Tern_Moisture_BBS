@@ -26,7 +26,7 @@ strata_map <- bbsBayes2::load_map("latlong")
 map_theme <- ggplot2::theme(line = ggplot2::element_line(linewidth = 0.4),
                rect = ggplot2::element_rect(linewidth = 0.1),
                text = element_text(family = "serif",
-                                   size = 7))
+                                   size = 10))
 # trend map breaks
 breaks <- c(-7, -4, -2, -1, -0.5, 0.5, 1, 2, 4, 7)
 labls <- c(paste0("< ", breaks[1]),
@@ -41,7 +41,7 @@ trend_map_colours <- c("#7E1700","#974D13", "#AC7726", "#C1A443", "#D2D384", "#C
 
 
 # Figure 1 showing trends from base model and regions ---------------------
-calc_indices <- FALSE
+calc_indices <- TRUE
 strata_core <- readRDS("data/strata_w_core_indicator.rds") %>%
   mutate(core = ifelse(periphery == 1, "periphery","core"))
 
@@ -170,7 +170,7 @@ m <- ggplot2::ggplot() +
   ggplot2::geom_sf(data = political,
                    colour = "grey70", size = 0.1,
                    fill = NA) +
-  ggplot2::geom_sf(data = bcr11_core, fill = NA, linewidth = 0.5)+
+  ggplot2::geom_sf(data = bcr11_core, fill = NA, linewidth = 0.75)+
   ggplot2::coord_sf(xlim = bb[c("xmin","xmax")],
                     ylim = bb[c("ymin","ymax")])+
   facet_grid(cols = vars(span))
