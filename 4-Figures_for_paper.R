@@ -485,6 +485,7 @@ cov_effect_plot <- ggplot(data = cov_hypers,
   map_theme +
   xlab("")+
   ylab("Estimated effect")+
+  theme(legend.position = "bottom")+
   ggplot2::scale_colour_manual(values = model_palette,
                                aesthetics= c("colour","fill"),
                                na.value = "white",
@@ -581,7 +582,7 @@ for(model in c("base","2covariate_varying",
            model_name = ifelse(model_type == "base",
                                "Base",
                                "Climate plus core"),
-           model_name = ifelse(model_type == "2covariate_varying_15",
+           model_name = ifelse(model_type == "2covariate_varying",
                                "Climate",
                                model_name))
 

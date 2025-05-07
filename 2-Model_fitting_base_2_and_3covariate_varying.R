@@ -125,8 +125,8 @@ saveRDS(ps,paste0("data/prepared_data_",sy,"-",ey,".rds"))
 
 # NAOI --------------------------------------------------------------------
 
-  ## global annual covariate
-  lag_nao <- 0 #1-year lag for NAO data
+  ## global annual covariate - 1-year lag
+  lag_nao <- 1 #1-year lag for NAO data
   nao <- readRDS("data/nao.rds")
   nao <- nao %>%
     rowwise() %>%
@@ -134,12 +134,26 @@ saveRDS(ps,paste0("data/prepared_data_",sy,"-",ey,".rds"))
     filter(year %in% c(years_incl-lag_nao)) %>%
     arrange(year)
 
-  cov_ann <- matrix(as.numeric(nao$winter),
+  cov_ann1 <- matrix(as.numeric(nao$winter),
                     nrow = 1)
 
 
 
-
+  
+  ## global annual covariate - preceding winter
+  lag_nao <- 0 #1-year lag for NAO data
+  nao <- readRDS("data/nao.rds")
+  nao <- nao %>%
+    rowwise() %>%
+    mutate(.,winter = mean(c(January:May))) %>%
+    filter(year %in% c(years_incl-lag_nao)) %>%
+    arrange(year)
+  
+  cov_ann0 <- matrix(as.numeric(nao$winter),
+                    nrow = 1)
+  
+  
+  
 # alternate spei covariates using 3-month spei ---------------------------------
 
 
@@ -259,8 +273,8 @@ pm_cov <- prepare_model(ps,
                         calculate_log_lik = TRUE)
 
 # manually adding covariate data required by model
-pm_cov$model_data[["cov"]] <- cov_incl
-pm_cov$model_data[["cov_ann"]] <- cov_ann
+pm_cov$model_data[["cov"]] <- cov_incl #15-month SPEI
+pm_cov$model_data[["cov_ann"]] <- cov_ann0 #preceding winter
 
 fit_cov <- run_model(pm_cov,
                  refresh = 200,
@@ -278,6 +292,39 @@ saveRDS(summ, paste0("results/summary_",model,"_",sy,"_",ey,"_2covariate_varying
 
 
 
+
+
+
+# Fit climate NAOI-lag model -----------------------------------------------
+
+cov_mod <- paste0("models/",model,"_spatial_bbs_CV_year_effect_2covariate_varying.stan")
+
+pm_cov <- prepare_model(ps,
+                        model = model,
+                        model_variant = model_variant,
+                        model_file = cov_mod,
+                        calculate_log_lik = TRUE)
+
+# manually adding covariate data required by model
+pm_cov$model_data[["cov"]] <- cov_incl #15-month SPEI
+pm_cov$model_data[["cov_ann"]] <- cov_ann1 #preceding winter
+
+fit_cov <- run_model(pm_cov,
+                     refresh = 200,
+                     iter_warmup = 2000,
+                     iter_sampling = 4000,
+                     thin = 2,
+                     max_treedepth = 11,
+                     adapt_delta = 0.8,
+                     output_dir = "output",
+                     output_basename = paste0(model,"_",sy,"_",ey,"_2covariate_varying_naoi1"))
+
+#parameter summary and convergence stats
+summ <- get_summary(fit_cov)
+saveRDS(summ, paste0("results/summary_",model,"_",sy,"_",ey,"_2covariate_varying_naoi1.rds"))
+
+
+
 # Fit climate-plus-core model ------------------------------------------
 cov_mod3 <- paste0("models/",model,"_spatial_bbs_CV_year_effect_2covariate_varying_core.stan")
 
@@ -288,7 +335,7 @@ pm_cov3 <- prepare_model(ps,
                          calculate_log_lik = TRUE)
 
 pm_cov3$model_data[["cov"]] <- cov_incl
-pm_cov3$model_data[["cov_ann"]] <- cov_ann
+pm_cov3$model_data[["cov_ann"]] <- cov_ann0
 
 pm_cov3$model_data[["cov_core"]] <- cov_core
 pm_cov3$model_data[["periphery"]] <- periphery
@@ -314,6 +361,40 @@ saveRDS(summ, paste0("results/summary_",model,"_",sy,"_",ey,"_2covariate_varying
 
 
 
+# Fit climate-plus-core naoi-lag1 model ------------------------------------------
+cov_mod3 <- paste0("models/",model,"_spatial_bbs_CV_year_effect_2covariate_varying_core.stan")
+
+pm_cov3 <- prepare_model(ps,
+                         model = model,
+                         model_variant = model_variant,
+                         model_file = cov_mod3,
+                         calculate_log_lik = TRUE)
+
+pm_cov3$model_data[["cov"]] <- cov_incl
+pm_cov3$model_data[["cov_ann"]] <- cov_ann1
+
+pm_cov3$model_data[["cov_core"]] <- cov_core
+pm_cov3$model_data[["periphery"]] <- periphery
+
+
+
+fit_cov3 <- run_model(pm_cov3,
+                      refresh = 200,
+                      iter_warmup = 2000,
+                      iter_sampling = 4000,
+                      thin = 2,
+                      max_treedepth = 11,
+                      adapt_delta = 0.8,
+                      output_dir = "output",
+                      output_basename = paste0(model,"_",sy,"_",ey,"_2covariate_varying_core_naoi1"))
+#parameter summary and convergence stats
+summ <- get_summary(fit_cov3)
+saveRDS(summ, paste0("results/summary_",model,"_",sy,"_",ey,"_2covariate_varying_core_naoi1.rds"))
+
+
+
+
+
 # Fit alternate SPEI-lag model ---------------------------------------------------
 
 cov_mod2 <- paste0("models/",model,"_spatial_bbs_CV_year_effect_3covariate_varying.stan")
@@ -326,7 +407,7 @@ pm_cov2 <- prepare_model(ps,
                          calculate_log_lik = TRUE)
 
 pm_cov2$model_data[["cov"]] <- cov_incl3
-pm_cov2$model_data[["cov_ann"]] <- cov_ann
+pm_cov2$model_data[["cov_ann"]] <- cov_ann0
 
 pm_cov2$model_data[["cov_lag"]] <- cov_lag_incl3
 
@@ -347,43 +428,43 @@ summ <- get_summary(fit_cov2)
 saveRDS(summ, paste0("results/summary_",model,"_",sy,"_",ey,"_3covariate_varying.rds"))
 
 
-
-# Fit alternate spei lag and climate-plus-core model ------------------------------------------
-
-
-cov_mod4 <- paste0("models/",model,"_spatial_bbs_CV_year_effect_3covariate_varying_core.stan")
-
-
-pm_cov4 <- prepare_model(ps,
-                         model = model,
-                         model_variant = model_variant,
-                         model_file = cov_mod4,
-                         calculate_log_lik = TRUE)
-
-pm_cov4$model_data[["cov"]] <- cov_incl3
-pm_cov4$model_data[["cov_ann"]] <- cov_ann
-pm_cov4$model_data[["cov_lag"]] <- cov_lag_incl3
-
-pm_cov4$model_data[["cov_core"]] <- cov_core3
-pm_cov4$model_data[["periphery"]] <- periphery
-
-
-
-fit_cov4 <- run_model(pm_cov4,
-                      refresh = 200,
-                      iter_warmup = 2000,
-                      iter_sampling = 4000,
-                      thin = 2,
-                      max_treedepth = 11,
-                      adapt_delta = 0.8,
-                      output_dir = "output",
-                      output_basename = paste0(model,"_",sy,"_",ey,"_3covariate_varying_core"))
-
-#parameter summary and convergence stats
-summ <- get_summary(fit_cov4)
-saveRDS(summ, paste0("results/summary_",model,"_",sy,"_",ey,"_3covariate_varying_core.rds"))
-
-
+# 
+# # Fit alternate spei lag and climate-plus-core model ------------------------------------------
+# 
+# 
+# cov_mod4 <- paste0("models/",model,"_spatial_bbs_CV_year_effect_3covariate_varying_core.stan")
+# 
+# 
+# pm_cov4 <- prepare_model(ps,
+#                          model = model,
+#                          model_variant = model_variant,
+#                          model_file = cov_mod4,
+#                          calculate_log_lik = TRUE)
+# 
+# pm_cov4$model_data[["cov"]] <- cov_incl3
+# pm_cov4$model_data[["cov_ann"]] <- cov_ann
+# pm_cov4$model_data[["cov_lag"]] <- cov_lag_incl3
+# 
+# pm_cov4$model_data[["cov_core"]] <- cov_core3
+# pm_cov4$model_data[["periphery"]] <- periphery
+# 
+# 
+# 
+# fit_cov4 <- run_model(pm_cov4,
+#                       refresh = 200,
+#                       iter_warmup = 2000,
+#                       iter_sampling = 4000,
+#                       thin = 2,
+#                       max_treedepth = 11,
+#                       adapt_delta = 0.8,
+#                       output_dir = "output",
+#                       output_basename = paste0(model,"_",sy,"_",ey,"_3covariate_varying_core"))
+# 
+# #parameter summary and convergence stats
+# summ <- get_summary(fit_cov4)
+# saveRDS(summ, paste0("results/summary_",model,"_",sy,"_",ey,"_3covariate_varying_core.rds"))
+# 
+# 
 
 
 

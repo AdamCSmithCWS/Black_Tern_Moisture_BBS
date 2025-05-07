@@ -179,7 +179,9 @@ beta_ann_cov = sd_beta_ann_cov*beta_ann_cov_raw + BETA_ann_cov;
 // may not be sufficient data to estimate both, in which case
 // remove yeareffect_raw and sdyear
 for(s in 1:n_strata){
-    yeareffect[s,] = sdyear[s]*yeareffect_raw[s,] + beta_cov[s]*cov[s,] + beta_ann_cov[s]*cov_ann[1,];
+    yeareffect[s,] = sdyear[s]*yeareffect_raw[s,] + 
+    beta_cov[s]*cov[s,] + 
+    beta_ann_cov[s]*cov_ann[1,];
     yeareffect_random[s,] = sdyear[s]*yeareffect_raw[s,];
 }
 
