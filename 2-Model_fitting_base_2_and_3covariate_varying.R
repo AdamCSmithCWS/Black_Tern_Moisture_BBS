@@ -10,6 +10,7 @@ dir.create("output") #necessary folder to save model output
 
 # Data setup using bbsBayes2 --------------------------------------------------------------
 
+options(cmdstanr_warn_inits = FALSE)
 
 species <- "Black Tern"
 stratification <- "latlong"

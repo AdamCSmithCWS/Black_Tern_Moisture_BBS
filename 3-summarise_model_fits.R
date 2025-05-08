@@ -26,23 +26,31 @@ inds_out <- NULL
 
 fit_base <- readRDS(paste0("output/",model,"_",sy,"_",ey,"_base.rds")) # read in the base model fit
 fit_cov <- readRDS(paste0("output/",model,"_",sy,"_",ey,"_2covariate_varying.rds")) # read in the covariate model fit
+fit_cov_naoi1 <- readRDS(paste0("output/",model,"_",sy,"_",ey,"_2covariate_varying_naoi1.rds")) # read in the covariate model fit
 fit_cov_lag <- readRDS(paste0("output/",model,"_",sy,"_",ey,"_3covariate_varying.rds")) # read in the covariate model fit
 fit_cov_core <- readRDS(paste0("output/",model,"_",sy,"_",ey,"_2covariate_varying_core.rds")) # read in the covariate model fit
+fit_cov_core_naoi1 <- readRDS(paste0("output/",model,"_",sy,"_",ey,"_2covariate_varying_core_naoi1.rds")) # read in the covariate model fit
 
 
 summ_base <- readRDS(paste0("results/summary_",model,"_",sy,"_",ey,"_base.rds")) %>%
   mutate(model = "base")
 summ_cov <- readRDS(paste0("results/summary_",model,"_",sy,"_",ey,"_2covariate_varying.rds")) %>%
   mutate(model = "weather")
+summ_cov_naoi1 <- readRDS(paste0("results/summary_",model,"_",sy,"_",ey,"_2covariate_varying_naoi1.rds")) %>%
+  mutate(model = "weather")
 summ_cov_lag <- readRDS(paste0("results/summary_",model,"_",sy,"_",ey,"_3covariate_varying.rds")) %>%
   mutate(model = "weather-lag")
 summ_cov_core <- readRDS(paste0("results/summary_",model,"_",sy,"_",ey,"_2covariate_varying_core.rds")) %>%
   mutate(model = "weather-plus-core")
+summ_cov_core_naoi1 <- readRDS(paste0("results/summary_",model,"_",sy,"_",ey,"_2covariate_varying_core_naoi1.rds")) %>%
+  mutate(model = "weather-plus-core")
 
 summ_all <- bind_rows(summ_base,
                       summ_cov,
+                      summ_cov_naoi1,
                       summ_cov_lag,
-                      summ_cov_core)
+                      summ_cov_core,
+                      summ_cov_core_naoi1)
 
 
 
@@ -62,29 +70,96 @@ check_conv <- summ_all %>%
 
 loo_base <- fit_base$model_fit$loo()
 loo_cov <- fit_cov$model_fit$loo()
+loo_cov_naoi1 <- fit_cov_naoi1$model_fit$loo()
 loo_cov_lag <- fit_cov_lag$model_fit$loo()
 loo_cov_core <- fit_cov_core$model_fit$loo()
+loo_cov_core_naoi1 <- fit_cov_core_naoi1$model_fit$loo()
 
 
-loo_comp_out <- as.data.frame(loo_compare(loo_base,loo_cov,loo_cov_lag,loo_cov_core))
-
-write.csv(loo_comp_out,
-          "results/loo_comparison.csv")
+loo_comp_out <- as.data.frame(loo_compare(loo_base,loo_cov,loo_cov_naoi1,loo_cov_lag,loo_cov_core,loo_cov_core_naoi1))
+loo_comp_out$model_num <- row.names(loo_comp_out)
+loo_comp_out$model_sort <- as.integer(gsub(pattern = "model",replacement = "",row.names(loo_comp_out)))
+loo_comp_out$model <- c("loo_base","loo_cov","loo_cov_naoi1","loo_cov_lag","loo_cov_core","loo_cov_core_naoi1")[loo_comp_out$model_sort]
 
 loo_compare(loo_cov,loo_cov_lag,loo_cov_core)
 
 pointwise <- fit_base$raw_data
-pointwise[,"elppd_base"] <- loo_base$pointwise[,"elpd_loo"]
-pointwise[,"elppd_weather"] <- loo_cov$pointwise[,"elpd_loo"]
-pointwise[,"elppd_weather_lag"] <- loo_cov_lag$pointwise[,"elpd_loo"]
-pointwise[,"elppd_weather_plus_core"] <- loo_cov_core$pointwise[,"elpd_loo"]
+pointwise[,"looic_base"] <- loo_base$pointwise[,"looic"]
+pointwise[,"looic_cov"] <- loo_cov$pointwise[,"looic"]
+pointwise[,"looic_cov_naoi1"] <- loo_cov_naoi1$pointwise[,"looic"]
+pointwise[,"looic_cov_lag"] <- loo_cov_lag$pointwise[,"looic"]
+pointwise[,"looic_cov_core"] <- loo_cov_core$pointwise[,"looic"]
+pointwise[,"looic_cov_core_naoi1"] <- loo_cov_core_naoi1$pointwise[,"looic"]
 
-pointwise <- pointwise %>%
-  mutate(dif_weather_plus_core_base = elppd_weather_plus_core-elppd_base,
-         dif_weather_plus_core_weather = elppd_weather_plus_core-elppd_weather,
-         dif_weather_base = elppd_weather-elppd_base,
-         dif_weather_plus_core_weather_lag = elppd_weather_plus_core-elppd_weather_lag,
-         dif_weather_weather_lag = elppd_weather-elppd_weather_lag)
+pointwise[,"elpd_loo_base"] <- loo_base$pointwise[,"elpd_loo"]
+pointwise[,"elpd_loo_cov"] <- loo_cov$pointwise[,"elpd_loo"]
+pointwise[,"elpd_loo_cov_naoi1"] <- loo_cov_naoi1$pointwise[,"elpd_loo"]
+pointwise[,"elpd_loo_cov_lag"] <- loo_cov_lag$pointwise[,"elpd_loo"]
+pointwise[,"elpd_loo_cov_core"] <- loo_cov_core$pointwise[,"elpd_loo"]
+pointwise[,"elpd_loo_cov_core_naoi1"] <- loo_cov_core_naoi1$pointwise[,"elpd_loo"]
+
+pointwise[,"influence_pareto_k_base"] <- loo_base$pointwise[,"influence_pareto_k"]
+pointwise[,"influence_pareto_k_cov"] <- loo_cov$pointwise[,"influence_pareto_k"]
+pointwise[,"influence_pareto_k_cov_naoi1"] <- loo_cov_naoi1$pointwise[,"influence_pareto_k"]
+pointwise[,"influence_pareto_k_cov_lag"] <- loo_cov_lag$pointwise[,"influence_pareto_k"]
+pointwise[,"influence_pareto_k_cov_core"] <- loo_cov_core$pointwise[,"influence_pareto_k"]
+pointwise[,"influence_pareto_k_cov_core_naoi1"] <- loo_cov_core_naoi1$pointwise[,"influence_pareto_k"]
+
+point_trim <- pointwise %>% 
+  filter(influence_pareto_k_base < 0.7,
+         influence_pareto_k_cov < 0.7,
+         influence_pareto_k_cov_naoi1 < 0.7,
+         influence_pareto_k_cov_lag < 0.7,
+         influence_pareto_k_cov_core < 0.7,
+         influence_pareto_k_cov_core_naoi1 < 0.7) %>%
+  mutate(elpd_diff_loo_cov_core = elpd_loo_cov_core-elpd_loo_cov_core,
+         elpd_diff_loo_cov = elpd_loo_cov_core-elpd_loo_cov,
+         elpd_diff_loo_cov_core_naoi1 = elpd_loo_cov_core-elpd_loo_cov_core_naoi1,
+         elpd_diff_loo_cov_naoi1 = elpd_loo_cov_core-elpd_loo_cov_naoi1,
+         elpd_diff_loo_cov_lag = elpd_loo_cov_core-elpd_loo_cov_lag,
+         elpd_diff_loo_base = elpd_loo_cov_core-elpd_loo_base)
+
+compare_no_k_bad <- point_trim %>% 
+  summarise(looic_base = sum(looic_base),
+            looic_cov = sum(looic_cov),
+            looic_cov_naoi1 = sum(looic_cov_naoi1),
+            looic_cov_lag = sum(looic_cov_lag),
+            looic_cov_core = sum(looic_cov_core),
+            looic_cov_core_naoi1 = sum(looic_cov_core_naoi1)) %>% 
+  pivot_longer(cols = starts_with("looic"),
+               names_to = "model",
+               names_prefix = "looic_",
+               values_to = "looic_no_bad_k") %>% 
+  mutate(model = paste0("loo_",model)) %>% 
+  arrange(looic_no_bad_k)
+
+loo_comp_out <- loo_comp_out %>% 
+  left_join(compare_no_k_bad, by = "model")
+
+# 
+# compare_elpd_no_k_bad <- point_trim %>% 
+#   summarise(elpd_base = mean(elpd_diff_loo_base),
+#             elpd_cov = mean(elpd_diff_loo_cov),
+#             elpd_cov_naoi1 = mean(elpd_diff_loo_cov_naoi1),
+#             elpd_cov_lag = mean(elpd_diff_loo_cov_lag),
+#             elpd_cov_core = mean(elpd_diff_loo_cov_core),
+#             elpd_cov_core_naoi1 = mean(elpd_diff_loo_cov_core_naoi1)) %>% 
+#   pivot_longer(cols = starts_with("elpd"),
+#                names_to = "model",
+#                names_prefix = "elpd_",
+#                values_to = "elpd_no_bad_k") %>% 
+#   mutate(model = paste0("loo_",model)) %>% 
+#   arrange(elpd_no_bad_k)
+# 
+# loo_comp_out <- loo_comp_out %>% 
+#   left_join(compare_elpd_no_k_bad, by = "model")
+
+
+
+write.csv(loo_comp_out,
+          "results/loo_comparison.csv")
+
+
 
 # summ <- readRDS(paste("results/summary",model,sy,ey,"2covariate_varying_lag.rds",
 #                       sep = "_"))
@@ -120,6 +195,7 @@ pointwise <- pointwise %>%
 
 
   inds_out <- bind_rows(inds_out,inds_cov_out)
+  
 # 3 covariate -------------------------------------------------------------
 
 
@@ -166,6 +242,7 @@ pointwise <- pointwise %>%
            type = "full")
   inds_cov_core_out <- bind_rows(inds_cov_core_out,
                                 inds_cov_core_out2)
+  
   inds_cov_core_rand <- generate_indices(fit_cov_core,alternate_n = "n_random")
   inds_cov_core_rand_out <- inds_cov_core_rand$indices %>%
     mutate(model = "covariates_core",
@@ -178,10 +255,75 @@ pointwise <- pointwise %>%
   inds_out <- bind_rows(inds_out,inds_cov_core_out)
 
 
+  
+  
+  
+  
+  # 2 covariate incl NAOI-lag1 plus core range predictor -------------------------------------------------------------
+  
+  
+  
+  inds_cov_core_naoi1 <- generate_indices(fit_cov_core_naoi1,alternate_n = "n_smooth")
+  inds_cov_core_naoi1_out <- inds_cov_core_naoi1$indices %>%
+    mutate(model = "covariates_core_naoi1",
+           base_model = model,
+           type = "smooth")
+  
+  inds_covalt_core <- generate_indices(fit_cov_core_naoi1,alternate_n = "n")
+  inds_cov_core_naoi1_out2 <- inds_covalt_core$indices %>%
+    mutate(model = "covariates_core_naoi1",
+           base_model = model,
+           type = "full")
+  inds_cov_core_naoi1_out <- bind_rows(inds_cov_core_naoi1_out,
+                                 inds_cov_core_naoi1_out2)
+  inds_cov_core_naoi1_rand <- generate_indices(fit_cov_core_naoi1,alternate_n = "n_random")
+  inds_cov_core_naoi1_rand_out <- inds_cov_core_naoi1_rand$indices %>%
+    mutate(model = "covariates_core_naoi1",
+           base_model = model,
+           type = "no_covariates")
+  inds_cov_core_naoi1_out <- bind_rows(inds_cov_core_naoi1_out,
+                                 inds_cov_core_naoi1_rand_out)
+  
+  
+  inds_out <- bind_rows(inds_out,inds_cov_core_naoi1_out)
+  
+  
+  
+  
+  # 2 covariate incl NAOI-lag1 -------------------------------------------------------------
+  
+  
+  
+  inds_cov_naoi1 <- generate_indices(fit_cov_naoi1,alternate_n = "n_smooth")
+  inds_cov_naoi1_out <- inds_cov_naoi1$indices %>%
+    mutate(model = "covariates_naoi1",
+           base_model = model,
+           type = "smooth")
+  
+  inds_cov_naoi1alt <- generate_indices(fit_cov_naoi1,alternate_n = "n")
+  inds_cov_naoi1_out2 <- inds_cov_naoi1alt$indices %>%
+    mutate(model = "covariates_naoi1",
+           base_model = model,
+           type = "full")
+  inds_cov_naoi1_out <- bind_rows(inds_cov_naoi1_out,
+                            inds_cov_naoi1_out2)
+  inds_cov_naoi1_rand <- generate_indices(fit_cov_naoi1,alternate_n = "n_random")
+  inds_cov_naoi1_rand_out <- inds_cov_naoi1_rand$indices %>%
+    mutate(model = "covariates_naoi1",
+           base_model = model,
+           type = "no_covariates")
+  inds_cov_naoi1_out <- bind_rows(inds_cov_naoi1_out,
+                            inds_cov_naoi1_rand_out)
+  
+  
+  inds_out <- bind_rows(inds_out,inds_cov_naoi1_out)
+  
+  
+  
 # base model --------------------------------------------------------------
 
 
-   inds <- generate_indices(fit,alternate_n = "n_smooth")
+   inds <- generate_indices(fit_base,alternate_n = "n_smooth")
 
   inds_outt <- inds$indices %>%
     mutate(model = "base",
@@ -191,7 +333,7 @@ pointwise <- pointwise %>%
   inds_out <- bind_rows(inds_out,
                         inds_outt)
 
-  indsf <- generate_indices(fit)
+  indsf <- generate_indices(fit_base)
 
   inds_outf <- indsf$indices %>%
     mutate(model = "base",
@@ -202,6 +344,15 @@ pointwise <- pointwise %>%
                         inds_outf)
 
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   inds_plot_cont <- inds_out %>%
   filter(region == "continent",
@@ -248,23 +399,13 @@ dev.off()
 
 # Trends estimates --------------------------------------------------------
 
-
-#inds_save <- bind_rows(inds_save,inds_out)
-#inds <- generate_indices(fit,alternate_n = "n_smooth")
 trends_cov <- generate_trends(inds_cov, min_year = sy,
                               prob_decrease = c(0,30,50))
 
 trends_out <- trends_cov$trends %>%
   mutate(type = "long-term",
          base_model = model,
-         model = "covariate")
-
-
-# trends_cov$trends[1,c("percent_change","percent_change_q_0.05","percent_change_q_0.95")]
-# trends_cov$trends[1,c("trend","width_of_95_percent_credible_interval")]
-#
-# trajs_cov <- plot_indices(inds_cov)
-# print(trajs_cov[[1]])
+         model = "covariates")
 
 
 trends_cov_3gen <- generate_trends(inds_cov, min_year = ey-BLTE_3Gen,
@@ -273,10 +414,37 @@ trends_cov_3gen <- generate_trends(inds_cov, min_year = ey-BLTE_3Gen,
 trendt <- trends_cov_3gen$trends %>%
   mutate(type = "three-generation",
          base_model = model,
-         model = "covariate")
+         model = "covariates")
 
 trends_out <- bind_rows(trends_out,trendt)
 
+
+# trends cov-naoi1 --------------------------------------------------------
+
+
+
+trends_cov_naoi1 <- generate_trends(inds_cov_naoi1, min_year = sy,
+                              prob_decrease = c(0,30,50))
+
+trendt <- trends_cov_naoi1$trends %>%
+  mutate(type = "long-term",
+         base_model = model,
+         model = "covariates_naoi1")
+
+trends_out <- bind_rows(trends_out,trendt)
+
+trends_cov_3gen_naoi1 <- generate_trends(inds_cov_naoi1, min_year = ey-BLTE_3Gen,
+                                   prob_decrease = c(0,30,50))
+
+trendt <- trends_cov_3gen_naoi1$trends %>%
+  mutate(type = "three-generation",
+         base_model = model,
+         model = "covariates_naoi1")
+
+trends_out <- bind_rows(trends_out,trendt)
+
+
+# trends covariate lag ----------------------------------------------------
 
 
 
@@ -302,6 +470,7 @@ trends_out <- bind_rows(trends_out,trendt)
 
 
 
+# trends base -------------------------------------------------------------
 
 trends <- generate_trends(inds, min_year = sy,
                           prob_decrease = c(0,30,50))
@@ -310,13 +479,6 @@ trendst <- trends$trends %>%
          base_model = model,
          model = "base")
 trends_out <- bind_rows(trends_out,trendst)
-
-# trends$trends[1,c("percent_change","percent_change_q_0.05","percent_change_q_0.95")]
-# trends$trends[1,c("trend","width_of_95_percent_credible_interval")]
-#
-# trajs <- plot_indices(inds, add_observed_means = TRUE, add_number_routes = TRUE)
-# print(trajs[[1]])
-
 
 trends_3gen <- generate_trends(inds, min_year = ey-BLTE_3Gen,
                                prob_decrease = c(0,30,50))
@@ -333,10 +495,7 @@ trends_out <- bind_rows(trends_out,trendst)
 
 
 
-
-
-
-
+# trends covariate w core -------------------------------------------------
 
 
 trends_cov_core <- generate_trends(inds_cov_core, min_year = sy,
@@ -360,7 +519,33 @@ trends_out <- bind_rows(trends_out,trendt)
 
 
 
-trends_save <- bind_rows(trends_save,trends_out)
+
+
+
+# trends covariate w core naoi1 -------------------------------------------------
+
+
+trends_cov_core_naoi1 <- generate_trends(inds_cov_core_naoi1, min_year = sy,
+                                   prob_decrease = c(0,30,50))
+
+trendt <- trends_cov_core_naoi1$trends %>%
+  mutate(type = "long-term",
+         base_model = model,
+         model = "covariates_core_naoi1")
+
+trends_out <- bind_rows(trends_out,trendt)
+
+trends_cov_core_3gen_naoi1 <- generate_trends(inds_cov_core_naoi1, min_year = ey-BLTE_3Gen,
+                                        prob_decrease = c(0,30,50))
+trendt <- trends_cov_core_3gen_naoi1$trends %>%
+  mutate(type = "three-generation",
+         base_model = model,
+         model = "covariates_core_naoi1")
+
+trends_out <- bind_rows(trends_out,trendt)
+
+
+
 
 strata_incl <- readRDS("data/strata_w_core_indicator.rds") %>%
   select(strata_name,periphery)
@@ -369,18 +554,19 @@ trends_out <- trends_out %>%
   full_join(.,strata_incl,
             by = c("region" = "strata_name"))
 
-
+saveRDS(trends_out,"all_trend_estimates.rds")
 ## plot continental trends for long-term and three generation
 ##
 model_names <- data.frame(model = c("covariates_core",
-                                    "covariate",
+                                    "covariates",
                                     "base"),
                           Model = c("SPEI - NAOI - Core SPEI",
                                     "SPEI - NAOI",
                                     "Base"))
 trends_cont <- trends_out %>%
   filter(region == "continent",
-         model != "covariates_lag") %>%
+         model != "covariates_lag",
+         !model %in% c("covariates_naoi1","covariates_core_naoi1")) %>%
   left_join(.,model_names,
             by = "model") %>%
   mutate(Time = type)
@@ -511,7 +697,8 @@ cov_spei <- get_summary(fit_cov,variables = "beta_cov") %>%
 cov_spei_out <- bind_rows(cov_spei_out,
                           cov_spei)
 
-strata_map <- load_map("bbs_usgs")
+strata_map <- load_map("bbs_usgs") %>% 
+  select(-bcr)
 
 map_spei <- base_map %>%
   inner_join(.,cov_spei)
@@ -678,7 +865,16 @@ print(nao_map_core)
 # print(spei_lag_map)
 #
 
+bcrs <- bbsBayes2::load_map("bcr") %>%
+  rename(bcr = strata_name)
 
+core_strata <- strata_map %>%
+  sf::st_join(.,bcrs,
+              largest = TRUE,
+              join = sf::st_covered_by) %>%
+  filter(bcr == "BCR11")
+
+core <- bcrs %>% filter(bcr == "BCR11")
 
 # overall spei map --------------------------------------------------------
 
@@ -733,8 +929,6 @@ spei_all_map_q5 <- ggplot()+
   theme_bw()+
   facet_grid(rows = vars(Predictor))
 
-core = bbsBayes2::load_map("bcr") %>%
-  filter(strata_name == "BCR11")
 
 
 spei_all_map_q95 <- ggplot()+
@@ -772,8 +966,8 @@ dev.off()
 
 
 nao_names <- data.frame(predictor = c("NAOI","NAOI after core"),
-                         Predictor = c("NAOI previous winter",
-                                       "NAOI previous winter after core"))
+                         Predictor = c("NAOI preceding winter",
+                                       "NAOI preceding winter after core"))
 
 map_nao_all <- base_map %>%
   inner_join(.,cov_nao_out,
@@ -941,8 +1135,8 @@ population_centers <- inds_full %>%
 
 
 # reload covariates -------------------------------------------------------
-lag_time_spei <- 1
-cov_all <- readRDS("data/annual_latlong_june_spei03.rds")
+lag_time_spei <- 0
+cov_all <- readRDS("data/annual_latlong_june_spei15.rds")
 
 strata_incl <- ps$meta_strata
 years_incl <- min(ps$raw_data$year) : max(ps$raw_data$year)
@@ -976,7 +1170,7 @@ cov_lag_incl <-  strata_incl %>%
   summarise(spei_lag = mean(spei_lag))
 
 ## global annual covariate
-lag_nao <- 1 #1-year lag for NAO data
+lag_nao <- 0 #1-year lag for NAO data
 nao <- readRDS("data/nao.rds")
 nao <- nao %>%
   rowwise() %>%
@@ -1054,8 +1248,6 @@ dev.off()
 
 
 
-}
-}
 
 
 
