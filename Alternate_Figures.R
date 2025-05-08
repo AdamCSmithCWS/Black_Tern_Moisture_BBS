@@ -15,8 +15,9 @@ sy <- 1970
 BLTE_gen = 5.682 # generation time for Black Tern - Bird et al. 2020
 BLTE_3Gen = round(BLTE_gen*3) # Three generations to calculate COSEWIC and IUCN trend thresholds
 
-model_palette <- viridis::viridis(3,end = 0.8)
-names(model_palette) <- c("Base","Climate","Climate with lag")
+model_palette <- viridis::viridis(6,end = 0.95)
+names(model_palette) <- c("Base","Climate","Climate NAOI-lag-1-year","Climate with lag","Climate plus core",
+                          "Climate plus core NAOI-lag-1-year")
 
 
 # base maps of core BCR and political jurisdictions
@@ -55,23 +56,56 @@ fit <- readRDS(paste0("output/gamye_",sy,"_",ey,"_",model,".rds")) # read in the
 
 
 
-fit_cov <- readRDS(paste0("output/gamye_",sy,"_",ey,"_2covariate_varying_orig.rds")) # read in the covariate model fit
+fit_cov <- readRDS(paste0("output/gamye_",sy,"_",ey,"_2covariate_varying.rds")) # read in the covariate model fit
 
-fit_cov_core <- readRDS(paste0("output/gamye_",sy,"_",ey,"_3covariate_varying.rds")) # read in the covariate model fit
+fit_cov_lag <- readRDS(paste0("output/gamye_",sy,"_",ey,"_3covariate_varying.rds")) # read in the covariate model fit
+
+fit_cov_naoi1 <- readRDS(paste0("output/gamye_",sy,"_",ey,"_2covariate_varying_naoi1.rds")) # read in the covariate model fit
+
+fit_cov_core <- readRDS(paste0("output/gamye_",sy,"_",ey,"_2covariate_varying_core.rds")) # read in the covariate model fit
+
+fit_cov_core_naoi1 <- readRDS(paste0("output/gamye_",sy,"_",ey,"_2covariate_varying_core_naoi1.rds")) # read in the covariate model fit
 
 cov_hypers <- get_summary(fit_cov,variables = c("BETA_cov","BETA_ann_cov")) %>%
   mutate(effect = ifelse(variable == "BETA_cov","SPEI-local","NAOI")) %>%
   mutate(model = "Climate")
 
-cov_hypers2 <- get_summary(fit_cov_core,variables = c("BETA_cov","BETA_lag_cov","BETA_ann_cov")) %>%
+cov_hypers_naoi1 <- get_summary(fit_cov_naoi1,variables = c("BETA_cov","BETA_ann_cov")) %>%
+  mutate(effect = ifelse(variable == "BETA_cov","SPEI-local","NAOI")) %>%
+  mutate(model = "Climate NAOI-lag-1-year")
+
+cov_hypers_core <- get_summary(fit_cov_core,variables = c("BETA_cov","BETA_cor_cov","BETA_ann_cov")) %>%
+  mutate(effect = ifelse(variable == "BETA_cov","SPEI-local","NAOI"),
+         effect = ifelse(variable == "BETA_cor_cov",
+                         "SPEI-core",
+                         effect)) %>%
+  mutate(model = "Climate plus core")
+
+cov_hypers_core_naoi1 <- get_summary(fit_cov_core_naoi1,variables = c("BETA_cov","BETA_cor_cov","BETA_ann_cov")) %>%
+  mutate(effect = ifelse(variable == "BETA_cov","SPEI-local","NAOI"),
+         effect = ifelse(variable == "BETA_cor_cov",
+                         "SPEI-core",
+                         effect)) %>%
+  mutate(model = "Climate plus core NAOI-lag-1-year")
+
+cov_hypers2 <- get_summary(fit_cov_lag,variables = c("BETA_cov","BETA_lag_cov","BETA_ann_cov")) %>%
   mutate(effect = ifelse(variable == "BETA_cov","SPEI-local","NAOI"),
          effect = ifelse(variable == "BETA_lag_cov",
                          "SPEI-local-lagged",
                          effect)) %>%
   mutate(model = "Climate with lag")
 
-cov_hypers <- bind_rows(cov_hypers,cov_hypers2)
-cov_effect_plot <- ggplot(data = cov_hypers,
+
+
+cov_hypers_all <- bind_rows(cov_hypers,cov_hypers2,cov_hypers_naoi1,
+                        cov_hypers_core,cov_hypers_core_naoi1) %>% 
+  mutate(model = factor(model,
+                        levels = c("Base","Climate","Climate NAOI-lag-1-year","Climate with lag","Climate plus core",
+                                   "Climate plus core NAOI-lag-1-year"),
+                        ordered = TRUE))
+
+
+cov_effect_plot <- ggplot(data = cov_hypers_all,
                           aes(x = effect, y = mean,
                               colour = model))+
   geom_hline(yintercept = 0, colour = "grey60")+
@@ -97,20 +131,23 @@ dev.off()
 
 
 
-
-
+# 
+# inds_plotting <- readRDS("results/all_annual_indices_saved.rds") %>% 
+#   filter(region == "continent",
+#          type != "smooth")
 
 # Figure 5 Trend comparison with covariates -------------------------------
 inds_plotting <- NULL
 trends_save <- NULL
-for(model in c("base","2covariate_varying",
-               "3covariate_varying")){
-  if(model == "2covariate_varying"){
-    fit_temp <- readRDS(paste0("output/gamye_",sy,"_",ey,"_2covariate_varying_orig.rds")) # read in the base model fit
-  }else{
+for(model in c("base",
+               "2covariate_varying",
+               "3covariate_varying",
+               "2covariate_varying_core",
+               "2covariate_varying_core_naoi1",
+               "2covariate_varying_naoi1")){
+
     fit_temp <- readRDS(paste0("output/gamye_",sy,"_",ey,"_",model,".rds")) # read in the base model fit
-  }
-  
+
   
   
   inds <- generate_indices(fit_temp,alternate_n = "n_smooth",
@@ -173,17 +210,25 @@ for(model in c("base","2covariate_varying",
 # inds_plotting <- readRDS(paste0("output/indices_df_compare_",sy,"_",ey,".rds"))
 # trends_save <- readRDS(paste0("output/trends_df_compare_",sy,"_",ey,".rds"))
 
+model_names <- data.frame(model_type = c("base",
+                                         "2covariate_varying",
+                                         "2covariate_varying_naoi1",
+                                         "3covariate_varying",
+                                         "2covariate_varying_core",
+                                         "2covariate_varying_core_naoi1"),
+                          model_name = c("Base",
+                                    "Climate",
+                                    "Climate NAOI-lag-1-year",
+                                    "Climate with lag",
+                                    "Climate plus core",
+                                    "Climate plus core NAOI-lag-1-year"))
+
 
 trends_highlevel <- trends_save %>%
   filter(region_type %in% c("continent","core"))%>%
   mutate(span = paste0(start_year,"-",end_year),
-         Region = str_to_title(region),
-         model_name = ifelse(model_type == "base",
-                             "Base",
-                             "Climate with lag"),
-         model_name = ifelse(model_type == "2covariate_varying",
-                             "Climate",
-                             model_name))
+         Region = str_to_title(region)) %>% 
+  left_join(model_names)
 
 trends_plot <- ggplot(data = trends_highlevel,
                       aes(x = span,y = trend,
@@ -213,24 +258,14 @@ trajs_highlevel1 <- inds_plotting %>%
   filter(region_type %in% c("continent"),
          year > 2004)%>%
   mutate(Region = str_to_title(region),
-         model_name = ifelse(model_type == "base",
-                             "Base",
-                             "Climate with lag"),
-         model_name = ifelse(model_type == "2covariate_varying",
-                             "Climate",
-                             model_name),
-         time_period = "Short-term")
+         time_period = "Short-term") %>% 
+  left_join(model_names)
 
 trajs_highlevel <- inds_plotting %>%
   filter(region_type %in% c("continent"))%>%
   mutate(Region = str_to_title(region),
-         model_name = ifelse(model_type == "base",
-                             "Base",
-                             "Climate with lag"),
-         model_name = ifelse(model_type == "2covariate_varying",
-                             "Climate",
-                             model_name),
-         time_period = "Long-term")
+         time_period = "Long-term") %>% 
+  left_join(model_names)
 
 
 traj_comp <- ggplot(data = trajs_highlevel,

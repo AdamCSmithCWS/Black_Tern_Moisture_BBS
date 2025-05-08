@@ -351,7 +351,7 @@ write.csv(loo_comp_out,
   
   
   
-  
+  saveRDS(inds_out,"results/all_annual_indices_saved.rds")
   
   
   inds_plot_cont <- inds_out %>%

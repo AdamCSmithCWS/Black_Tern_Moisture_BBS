@@ -41,7 +41,6 @@ trend_map_colours <- c("#7E1700","#974D13", "#AC7726", "#C1A443", "#D2D384", "#C
 
 
 # Figure 1 showing trends from base model and regions ---------------------
-calc_indices <- TRUE
 strata_core <- readRDS("data/strata_w_core_indicator.rds") %>%
   mutate(core = ifelse(periphery == 1, "periphery","core"))
 
@@ -55,6 +54,7 @@ fit <- readRDS(paste0("output/gamye_",sy,"_",ey,"_",model,".rds")) # read in the
 
 
 
+calc_indices <- TRUE
 
 
 if(calc_indices){
@@ -617,7 +617,7 @@ for(model in c("base","2covariate_varying",
            model_name = ifelse(model_type == "base",
                                "Base",
                                "Climate plus core"),
-           model_name = ifelse(model_type == "2covariate_varying_15",
+           model_name = ifelse(model_type == "2covariate_varying",
                                "Climate",
                                model_name),
            time_period = "Short-term")
@@ -628,7 +628,7 @@ for(model in c("base","2covariate_varying",
            model_name = ifelse(model_type == "base",
                                "Base",
                                "Climate plus core"),
-           model_name = ifelse(model_type == "2covariate_varying_15",
+           model_name = ifelse(model_type == "2covariate_varying",
                                "Climate",
                                model_name),
            time_period = "Long-term")
