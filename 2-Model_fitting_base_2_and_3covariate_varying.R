@@ -200,6 +200,15 @@ saveRDS(ps,paste0("data/prepared_data_",sy,"-",ey,".rds"))
                      nrow = 1)
 
 
+  save(list = c("cov_incl",
+                "cov_incl3",
+                "cov_ann0",
+                "cov_ann1",
+                "cov_core",
+                "periphery",
+                "cov_lag_incl3"),
+       file = "data/load_covariates.RData")
+  
  
 # Run Base model ----------------------------------------------------------
 run_base <- TRUE
@@ -280,6 +289,7 @@ pm_cov <- prepare_model(ps,
 # manually adding covariate data required by model
 pm_cov$model_data[["cov"]] <- cov_incl #15-month SPEI
 pm_cov$model_data[["cov_ann"]] <- cov_ann0 #preceding winter
+
 
 fit_cov <- run_model(pm_cov,
                  refresh = 200,
@@ -432,7 +442,6 @@ pm_cov3$model_data[["cov_core"]] <- cov_core
 pm_cov3$model_data[["periphery"]] <- periphery
 
 
-
 fit_cov3 <- run_model(pm_cov3,
                       refresh = 200,
                       iter_warmup = 2000,
@@ -485,7 +494,7 @@ saveRDS(summ, paste0("results/summary_",model,"_",sy,"_",ey,"_2covariate_varying
     sum_cv <- sum_cv %>%
       mutate(original_count_index = fit_tmp$model_data$test)
     
-    saveRDS(sum_cv,paste0("CV_",k,"_",sy,"_",ey,"_2covariate_varying_naoi1.rds"))
+    saveRDS(sum_cv,paste0("CV_",k,"_",sy,"_",ey,"_2covariate_varying_core.rds"))
     
   }
   
