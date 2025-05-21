@@ -26,24 +26,55 @@ sy <-1970
 
 
 
-ps <- readRDS(paste0("data/prepared_data_",sy,"-",ey,".rds"))
-
 
 
 load("data/load_covariates.RData")
 
 cov_mod <- paste0("models/",model,"_spatial_bbs_CV_base.stan")
 
-pm_cov <- prepare_model(ps,
-                        model = model,
-                        model_variant = model_variant,
-                        model_file = cov_mod,
-                        calculate_log_lik = FALSE,
-                        calculate_cv = TRUE,
-                        cv_k = K)
+#ps <- readRDS(paste0("data/prepared_data_",sy,"-",ey,".rds"))
+# pm_cov <- prepare_model(ps,
+#                         model = model,
+#                         model_variant = model_variant,
+#                         model_file = cov_mod,
+#                         calculate_log_lik = FALSE,
+#                         calculate_cv = TRUE,
+#                         cv_k = K,
+#                         cv_fold_groups = "route",
+#                         cv_omit_singles = FALSE)
+#
+# replacing folds with years ----------------------------------------------
+# n_groups <- pm_cov$model_data$n_years
+# new_folds <- data.frame( year = c(min(pm_cov$model_data$year):max(pm_cov$model_data$year)),
+#                          fold = sample(rep(1:10,length.out = n_groups)))
+# 
+# pm_cov$raw_data <- pm_cov$raw_data %>% 
+#   left_join(new_folds,by = "year")
+# pm_cov$folds <- pm_cov$raw_data$fold
+
+# saveRDS(pm_cov,"base_cv_data.rds")
+
+pm_cov <- readRDS("base_cv_data.rds")
+pm_cov$meta_data$model_file <- cov_mod
+
 
 raw <- pm_cov$raw_data %>% 
   mutate(original_count_index = row_number())
+pm_cov1 <- pm_cov
+pm_cov1$model_data$calc_log_lik <- 1
+
+
+# full_fit <- run_model(pm_cov1,
+#                       refresh = 500,
+#                       iter_warmup = 1000,
+#                       iter_sampling = 3000,
+#                       thin = 3,
+#                       init_alternate = 1,#fit_orig$model_fit,
+#                       max_treedepth = 11,
+#                       adapt_delta = 0.8,
+#                       output_basename = "base_full",
+#                       save_model = TRUE)
+full_fit <- readRDS("base_full.rds")
 
 for(k in 1:K){
   
@@ -53,10 +84,11 @@ for(k in 1:K){
                        iter_sampling = 1000,
                        thin = 1,
                        k = k,
-                       init_alternate = 1,#fit_orig$model_fit,
+                       init_alternate = full_fit$model_fit,
                        max_treedepth = 11,
                        adapt_delta = 0.8,
-                       output_basename = "base")
+                       output_basename = "base",
+                       save_model = FALSE)
   
   
   sum_cv <- get_summary(fit_tmp,variables = "log_lik_cv")
@@ -70,12 +102,13 @@ for(k in 1:K){
   
 }
 
-
+do_summary <- TRUE
+if(do_summary){
 loo_out <- NULL
 for(mod_name in c("base",
-                  "2covariate_varying_core",
-                  "2covariate_varying_core_naoi1",
-                  "2covariate_varying")){
+                  "core",
+                  "core_naoi1",
+                  "cov")){
 
 for(k in 1:K){
   
@@ -109,13 +142,13 @@ loo_point_wise <- loo_out %>%
               names_prefix = "M") %>% 
   inner_join(raw, by = "original_count_index") %>% 
   left_join(core_strat, by = "strata") %>% 
-  mutate(dif_base = M2covariate_varying_core - Mbase,
-         dif_cov = M2covariate_varying_core - M2covariate_varying,
-         dif_naoi1 = M2covariate_varying_core - M2covariate_varying_core_naoi1,
-         dif_cov_base = M2covariate_varying - Mbase) 
+  mutate(dif_base = Mcore - Mbase,
+         dif_cov = Mcore - Mcov,
+         dif_naoi1 = Mcore - Mcore_naoi1,
+         dif_cov_base = Mcov - Mbase) 
 
 loo_plot <- ggplot(data = loo_point_wise,
-                   aes(x = count,y = dif_cov_base,
+                   aes(x = count,y = dif_base,
                        colour = year))+
   geom_point(alpha = 0.3)+
   facet_wrap(vars(periphery),scales = "free_x")
@@ -151,3 +184,6 @@ loo_point_summary_by_periphery <- loo_point_wise %>%
 
 write_csv(loo_point_summary_by_periphery,
           "selected_cross_validation_comparison.csv")
+
+}
+
