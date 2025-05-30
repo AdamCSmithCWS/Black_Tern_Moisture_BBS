@@ -30,6 +30,7 @@ fit_cov_naoi1 <- readRDS(paste0("output/",model,"_",sy,"_",ey,"_2covariate_varyi
 fit_cov_lag <- readRDS(paste0("output/",model,"_",sy,"_",ey,"_3covariate_varying.rds")) # read in the covariate model fit
 fit_cov_core <- readRDS(paste0("output/",model,"_",sy,"_",ey,"_2covariate_varying_core.rds")) # read in the covariate model fit
 fit_cov_core_naoi1 <- readRDS(paste0("output/",model,"_",sy,"_",ey,"_2covariate_varying_core_naoi1.rds")) # read in the covariate model fit
+fit_cov_core_spei <- readRDS(paste0("output/",model,"_",sy,"_",ey,"_1covariate_varying_core.rds")) # read in the covariate model fit
 
 
 summ_base <- readRDS(paste0("results/summary_",model,"_",sy,"_",ey,"_base.rds")) %>%
@@ -74,6 +75,7 @@ loo_cov_naoi1 <- fit_cov_naoi1$model_fit$loo()
 loo_cov_lag <- fit_cov_lag$model_fit$loo()
 loo_cov_core <- fit_cov_core$model_fit$loo()
 loo_cov_core_naoi1 <- fit_cov_core_naoi1$model_fit$loo()
+loo_cov_core_spei <- fit_cov_core_spei$model_fit$loo()
 
 
 loo_comp_out <- as.data.frame(loo_compare(loo_base,loo_cov,loo_cov_naoi1,loo_cov_lag,loo_cov_core,loo_cov_core_naoi1))
