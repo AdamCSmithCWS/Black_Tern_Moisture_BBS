@@ -31,8 +31,8 @@ sy <-1970
 load("data/load_covariates.RData")
 
 cov_mod <- paste0("models/",model,"_spatial_bbs_CV_base.stan")
-
-#ps <- readRDS(paste0("data/prepared_data_",sy,"-",ey,".rds"))
+# 
+# ps <- readRDS(paste0("data/prepared_data_",sy,"-",ey,".rds"))
 # pm_cov <- prepare_model(ps,
 #                         model = model,
 #                         model_variant = model_variant,
@@ -42,15 +42,18 @@ cov_mod <- paste0("models/",model,"_spatial_bbs_CV_base.stan")
 #                         cv_k = K,
 #                         cv_fold_groups = "route",
 #                         cv_omit_singles = FALSE)
-#
-# replacing folds with years ----------------------------------------------
+# 
+# # replacing folds with years ----------------------------------------------
 # n_groups <- pm_cov$model_data$n_years
-# new_folds <- data.frame( year = c(min(pm_cov$model_data$year):max(pm_cov$model_data$year)),
+# new_folds <- data.frame( year_num = c(min(pm_cov$model_data$year):max(pm_cov$model_data$year)),
 #                          fold = sample(rep(1:10,length.out = n_groups)))
 # 
-# pm_cov$raw_data <- pm_cov$raw_data %>% 
-#   left_join(new_folds,by = "year")
+# pm_cov$raw_data <- pm_cov$raw_data %>%
+#   left_join(new_folds,by = c("year_num"))
+# 
+# 
 # pm_cov$folds <- pm_cov$raw_data$fold
+# 
 
 # saveRDS(pm_cov,"base_cv_data.rds")
 
@@ -60,6 +63,13 @@ pm_cov$meta_data$model_file <- cov_mod
 
 raw <- pm_cov$raw_data %>% 
   mutate(original_count_index = row_number())
+
+fold_summary <- raw %>% 
+  group_by(fold,year) %>% 
+  summarise(n_counts = n())
+
+
+
 pm_cov1 <- pm_cov
 pm_cov1$model_data$calc_log_lik <- 1
 
