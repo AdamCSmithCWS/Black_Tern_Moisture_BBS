@@ -56,17 +56,18 @@ pm_cov1 <- pm_cov
 pm_cov1$model_data$calc_log_lik <- 1
 
 
-full_fit <- run_model(pm_cov1,
-                      refresh = 500,
-                      iter_warmup = 1000,
-                      iter_sampling = 3000,
-                      thin = 3,
-                      init_alternate = 1,#fit_orig$model_fit,
-                      max_treedepth = 11,
-                      adapt_delta = 0.8,
-                      output_basename = "core_spei_full",
-                      save_model = TRUE)
-#full_fit <- readRDS("core_spei_full.rds")
+# full_fit <- run_model(pm_cov1,
+#                       refresh = 500,
+#                       iter_warmup = 1000,
+#                       iter_sampling = 3000,
+#                       thin = 3,
+#                       init_alternate = 1,#fit_orig$model_fit,
+#                       max_treedepth = 11,
+#                       adapt_delta = 0.8,
+#                       output_basename = "core_spei_full",
+#                       save_model = TRUE)
+
+full_fit <- readRDS("core_spei_full.rds")
 
 for(k in 1:K){
   

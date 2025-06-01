@@ -60,13 +60,13 @@ cov_mod <- paste0("models/",model,"_spatial_bbs_CV_base.stan")
 pm_cov <- readRDS("base_cv_data.rds")
 pm_cov$meta_data$model_file <- cov_mod
 
-
-raw <- pm_cov$raw_data %>% 
-  mutate(original_count_index = row_number())
-
-fold_summary <- raw %>% 
-  group_by(fold,year) %>% 
-  summarise(n_counts = n())
+# 
+# raw <- pm_cov$raw_data %>% 
+#   mutate(original_count_index = row_number())
+# 
+# fold_summary <- raw %>% 
+#   group_by(fold,year) %>% 
+#   summarise(n_counts = n())
 
 
 
