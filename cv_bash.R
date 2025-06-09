@@ -61,12 +61,12 @@ pm_cov <- readRDS("base_cv_data.rds")
 pm_cov$meta_data$model_file <- cov_mod
 
 # 
-# raw <- pm_cov$raw_data %>% 
-#   mutate(original_count_index = row_number())
-# 
-# fold_summary <- raw %>% 
-#   group_by(fold,year) %>% 
-#   summarise(n_counts = n())
+raw <- pm_cov$raw_data %>%
+  mutate(original_count_index = row_number())
+
+fold_summary <- raw %>%
+  group_by(fold,year) %>%
+  summarise(n_counts = n())
 
 
 
@@ -103,6 +103,7 @@ for(k in 1:K){
   
   sum_cv <- get_summary(fit_tmp,variables = "log_lik_cv")
   
+
   # identifying which counts are being predicted in each fold using the
   # "test" vector in the original model data
   sum_cv <- sum_cv %>%
@@ -294,6 +295,43 @@ cv_spatial <- ggplot()+
   theme_bw()
   
 cv_spatial
+
+
+
+
+
+
+loo_point_summary_by_year <- loo_point_wise %>% 
+  group_by(year, core_spei) %>% 
+  summarise(n_counts = n(),
+            mean_dif_base = mean(dif_base),
+            mean_dif_spei = mean(dif_spei),
+            mean_dif_cov = mean(dif_cov),
+            mean_dif_naoi1 = mean(dif_naoi1),
+            mean_dif_cov_base = mean(dif_cov_base),
+            mean_dif_core_spei_base = mean(dif_core_spei_base),
+            
+            sd_dif_base = sd(dif_base)/sqrt(n_counts),
+            sd_dif_spei = sd(dif_spei)/sqrt(n_counts),
+            sd_dif_cov = sd(dif_cov)/sqrt(n_counts),
+            sd_dif_naoi1 = sd(dif_naoi1)/sqrt(n_counts),
+            sd_dif_cov_base = sd(dif_cov_base)/sqrt(n_counts),
+            sd_dif_core_spei_base = sd(dif_core_spei_base)/sqrt(n_counts),
+            
+            t_dif_base = mean_dif_base/sd_dif_base,
+            t_dif_spei = mean_dif_spei/sd_dif_spei,
+            t_dif_cov = mean_dif_cov/sd_dif_cov,
+            t_dif_naoi1 = mean_dif_naoi1/sd_dif_naoi1,
+            t_dif_cov_base = mean_dif_cov_base/sd_dif_cov_base,
+            t_dif_core_spei_base = mean_dif_core_spei_base/sd_dif_core_spei_base)
+
+
+yr_plot <- ggplot(data = loo_point_summary_by_year,
+                  aes(x = core_spei, y = t_dif_base,
+                      colour = year))+
+  geom_point()
+
+yr_plot
 
 
 }

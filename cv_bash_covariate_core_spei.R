@@ -86,6 +86,15 @@ for(k in 1:K){
   
   sum_cv <- get_summary(fit_tmp,variables = "log_lik_cv")
   
+  
+  loaded_fit <- cmdstanr::as_cmdstan_fit(
+    files = paste0("core_spei_k",k,"-",c(1:4),".csv"),
+    check_diagnostics = TRUE,
+    format = getOption("cmdstanr_draws_format")
+  )
+  
+  summ_loaded_fit <- loaded_fit$summary()
+  
   # identifying which counts are being predicted in each fold using the
   # "test" vector in the original model data
   sum_cv <- sum_cv %>%
