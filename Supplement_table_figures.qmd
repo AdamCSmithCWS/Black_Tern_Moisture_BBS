@@ -1,0 +1,21 @@
+---
+title: "McKellar et al. supplemental table and figures"
+format: pdf
+editor: visual
+---
+
+```{r load_saved, echo=FALSE, message=FALSE,warning=FALSE}
+library(tidyverse)
+library(kableExtra)
+fig1 <- readRDS("figures/Figure_s1.rds")
+fig2 <- readRDS("figures/figure_s2.rds")
+fig3 <- readRDS("figures/figure_s3.rds")
+fig4 <- readRDS("figures/figure_s4.rds")
+
+tab1 <- read_csv("cross_validation/selected_cross_validation_comparison.csv")
+
+```
+
+```{r tableS1}
+kable()
+```
