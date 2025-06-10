@@ -143,6 +143,7 @@ loo_sum <- loo_out %>%
             min_ess = min(ess_bulk),
             mean_ess = mean(ess_bulk))
 
+save_csv(loo_sum,"cross_validation/cv_summary_simple.csv")
 core_strat <- data.frame(strata = c(1:pm_cov$model_data$n_strata),
                          periphery = periphery)
 
