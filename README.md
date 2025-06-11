@@ -1,6 +1,6 @@
-# Black Tern trends and annual fluctuations
+# Black Tern trends and annual fluctuations related to climate
 
-## Separating annual fluctuations in Black Tern bird abundance from longer-term non-linear patterns in population change
+## Separating annual fluctuations in Black Tern abundance from longer-term non-linear patterns in population change
 
 Using data from the North American Breeding Bird Survey for Black Tern and annual covariates of moisture/drought, we modeled annual fluctuations and long-term population change. 
 
@@ -11,7 +11,9 @@ We designed the model to estimate the effects of annual climate patterns on abun
 The 5 R-scripts are ordered and provide the full code and data-download functions necessary to reproduce the analyses, tables, and figures in the paper. 
 
 The Stan models are in the models folder
+
 The covariate data are saved in the data folder
+
 The cross_validation folder includes scripts necessary to run the k-fold cross validation summarized in supplemental table S1.
 
 
