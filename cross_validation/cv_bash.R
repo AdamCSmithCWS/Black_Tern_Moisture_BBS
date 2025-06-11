@@ -18,9 +18,6 @@ model_variant <- "spatial"
 
 strata_map <- bbsBayes2::load_map(stratification)
 
-#only needs to be run once to download a local copy
-#of the BBS database.
-
 ey <-2022
 sy <-1970
 
@@ -32,32 +29,37 @@ load("data/load_covariates.RData")
 
 cov_mod <- paste0("models/",model,"_spatial_bbs_CV_base.stan")
 # 
-# ps <- readRDS(paste0("data/prepared_data_",sy,"-",ey,".rds"))
-# pm_cov <- prepare_model(ps,
-#                         model = model,
-#                         model_variant = model_variant,
-#                         model_file = cov_mod,
-#                         calculate_log_lik = FALSE,
-#                         calculate_cv = TRUE,
-#                         cv_k = K,
-#                         cv_fold_groups = "route",
-#                         cv_omit_singles = FALSE)
-# 
-# # replacing folds with years ----------------------------------------------
-# n_groups <- pm_cov$model_data$n_years
-# new_folds <- data.frame( year_num = c(min(pm_cov$model_data$year):max(pm_cov$model_data$year)),
-#                          fold = sample(rep(1:10,length.out = n_groups)))
-# 
-# pm_cov$raw_data <- pm_cov$raw_data %>%
-#   left_join(new_folds,by = c("year_num"))
-# 
-# 
-# pm_cov$folds <- pm_cov$raw_data$fold
-# 
+re_prepare_folds <- FALSE
+
+if(re_prepare_folds){
+ps <- readRDS(paste0("data/prepared_data_",sy,"-",ey,".rds"))
+pm_cov <- prepare_model(ps,
+                        model = model,
+                        model_variant = model_variant,
+                        model_file = cov_mod,
+                        calculate_log_lik = FALSE,
+                        calculate_cv = TRUE,
+                        cv_k = K,
+                        cv_fold_groups = "route",
+                        cv_omit_singles = FALSE)
+
+# replacing folds with years ----------------------------------------------
+n_groups <- pm_cov$model_data$n_years
+new_folds <- data.frame( year_num = c(min(pm_cov$model_data$year):max(pm_cov$model_data$year)),
+                         fold = sample(rep(1:10,length.out = n_groups)))
+
+pm_cov$raw_data <- pm_cov$raw_data %>%
+  left_join(new_folds,by = c("year_num"))
+
+
+pm_cov$folds <- pm_cov$raw_data$fold
+
 
 # saveRDS(pm_cov,"base_cv_data.rds")
-
+}else{
 pm_cov <- readRDS("base_cv_data.rds")
+}
+
 pm_cov$meta_data$model_file <- cov_mod
 
 # 

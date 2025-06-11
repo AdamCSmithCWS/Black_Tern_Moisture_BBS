@@ -1,8 +1,9 @@
 ### running bbsBayes2 spatial GAMYE model
 
 
-# relies on v1.1.1 of bbsBayes2
+# initially run using v1.1.1 of bbsBayes2
 #remotes::install_github("https://github.com/bbsBayes/bbsBayes2/releases/tag/v1.1.1")
+# However, this should work with most recent version of bbsBayes2
 library(bbsBayes2)
 library(tidyverse)
 
@@ -29,6 +30,7 @@ strata_map <- bbsBayes2::load_map(stratification)
 ey <-2022
 sy <-1970
 
+## must set re_prepare_data to TRUE to re-download and prepare data.
 re_prepare_data <- FALSE
 if(re_prepare_data){
 bbsBayes2::fetch_bbs_data(release = 2023) # release that includes data up to 2022 field season
@@ -39,13 +41,14 @@ bbsBayes2::fetch_bbs_data(release = 2023) # release that includes data up to 202
   
 p <- prepare_data(s,
                   min_n_routes = 1,
-                  min_max_route_years = 6,
+                  min_max_route_years = 6, # only strata with at least 1 BBS-route on which the species has been observed in at least 6 years
                   max_year = ey,
                   min_year = sy)
 
 ps <- prepare_spatial(p,
                       strata_map = strata_map)
 
+# check to visualise the strata that are included and their neighbourhood relationships
 view_strata <- ps$spatial_data$map +
   geom_sf(data = bbsBayes2::load_map("bbs_usgs"),
           fill = NA)
@@ -62,7 +65,7 @@ saveRDS(ps,paste0("data/prepared_data_",sy,"-",ey,".rds"))
 
 
 # SPEI --------------------------------------------------------------------
-
+# loading the 15-month SPEI  dta
   n_months <- 15
 
   cov_all <- readRDS(paste0("data/annual_latlong_june_spei",n_months,".rds"))
@@ -83,7 +86,7 @@ saveRDS(ps,paste0("data/prepared_data_",sy,"-",ey,".rds"))
 
   ## mean moisture in strata within core of species' range
 
-  # ID BCR 11 strata
+  # Identifying the strata considered the core of the range (BCR 11)
   #
 
   bcrs <- bbsBayes2::load_map("bcr") %>%
@@ -119,7 +122,8 @@ saveRDS(ps,paste0("data/prepared_data_",sy,"-",ey,".rds"))
   
   
   periphery <- as.integer(strata_incl$periphery)
-  core = which(periphery == 0)
+  core <- which(periphery == 0)
+  # calculating the mean annual covariate value in the core of the range
   mean_cov_core <- colMeans(cov_incl[core,])
   cov_core <- matrix(as.numeric(mean_cov_core),
                      nrow = 1)
@@ -190,16 +194,11 @@ saveRDS(ps,paste0("data/prepared_data_",sy,"-",ey,".rds"))
 
 
   ## mean moisture in strata within core of species' range
-
-  # ID BCR 11 strata
-  #
-
-
   mean_cov_core3 <- colMeans(cov_incl3[core,])
   cov_core3 <- matrix(as.numeric(mean_cov_core3),
                      nrow = 1)
 
-
+  # saving all covariates
   save(list = c("cov_incl",
                 "cov_incl3",
                 "cov_ann0",
@@ -573,43 +572,7 @@ summ <- get_summary(fit_cov2)
 saveRDS(summ, paste0("results/summary_",model,"_",sy,"_",ey,"_3covariate_varying.rds"))
 
 
-# 
-# # Fit alternate spei lag and climate-plus-core model ------------------------------------------
-# 
-# 
-# cov_mod4 <- paste0("models/",model,"_spatial_bbs_CV_year_effect_3covariate_varying_core.stan")
-# 
-# 
-# pm_cov4 <- prepare_model(ps,
-#                          model = model,
-#                          model_variant = model_variant,
-#                          model_file = cov_mod4,
-#                          calculate_log_lik = TRUE)
-# 
-# pm_cov4$model_data[["cov"]] <- cov_incl3
-# pm_cov4$model_data[["cov_ann"]] <- cov_ann
-# pm_cov4$model_data[["cov_lag"]] <- cov_lag_incl3
-# 
-# pm_cov4$model_data[["cov_core"]] <- cov_core3
-# pm_cov4$model_data[["periphery"]] <- periphery
-# 
-# 
-# 
-# fit_cov4 <- run_model(pm_cov4,
-#                       refresh = 200,
-#                       iter_warmup = 2000,
-#                       iter_sampling = 4000,
-#                       thin = 2,
-#                       max_treedepth = 11,
-#                       adapt_delta = 0.8,
-#                       output_dir = "output",
-#                       output_basename = paste0(model,"_",sy,"_",ey,"_3covariate_varying_core"))
-# 
-# #parameter summary and convergence stats
-# summ <- get_summary(fit_cov4)
-# saveRDS(summ, paste0("results/summary_",model,"_",sy,"_",ey,"_3covariate_varying_core.rds"))
-# 
-# 
+
 
 
 

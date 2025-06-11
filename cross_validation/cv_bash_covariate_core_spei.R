@@ -32,22 +32,10 @@ load("data/load_covariates.RData")
 
 cov_mod <- paste0("models/",model,"_spatial_bbs_CV_year_effect_1covariate_varying_core.stan")
 
-#ps <- readRDS(paste0("data/prepared_data_",sy,"-",ey,".rds"))
-# pm_cov <- prepare_model(ps,
-#                         model = model,
-#                         model_variant = model_variant,
-#                         model_file = cov_mod,
-#                         calculate_log_lik = FALSE,
-#                         calculate_cv = TRUE,
-#                         cv_k = K,
-#                         cv_fold_groups = "route",
-#                         cv_omit_singles = FALSE)
-
 pm_cov <- readRDS("base_cv_data.rds")
 pm_cov$meta_data$model_file <- cov_mod
 # manually adding covariate data required by model
 pm_cov$model_data[["cov"]] <- cov_incl
-#pm_cov$model_data[["cov_ann"]] <- cov_ann0
 
 pm_cov$model_data[["cov_core"]] <- cov_core
 pm_cov$model_data[["periphery"]] <- periphery
@@ -56,18 +44,18 @@ pm_cov1 <- pm_cov
 pm_cov1$model_data$calc_log_lik <- 1
 
 
-# full_fit <- run_model(pm_cov1,
-#                       refresh = 500,
-#                       iter_warmup = 1000,
-#                       iter_sampling = 3000,
-#                       thin = 3,
-#                       init_alternate = 1,#fit_orig$model_fit,
-#                       max_treedepth = 11,
-#                       adapt_delta = 0.8,
-#                       output_basename = "core_spei_full",
-#                       save_model = TRUE)
+full_fit <- run_model(pm_cov1,
+                      refresh = 500,
+                      iter_warmup = 1000,
+                      iter_sampling = 3000,
+                      thin = 3,
+                      init_alternate = 1,#fit_orig$model_fit,
+                      max_treedepth = 11,
+                      adapt_delta = 0.8,
+                      output_basename = "core_spei_full",
+                      save_model = TRUE)
 
-full_fit <- readRDS("core_spei_full.rds")
+#full_fit <- readRDS("core_spei_full.rds")
 
 for(k in 1:K){
   
