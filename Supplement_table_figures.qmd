@@ -1,7 +1,7 @@
 ---
 title: "McKellar et al. supplemental table and figures"
 format: 
-  pdf:    
+  docx:    
     include-in-header: 
       text: '\pagenumbering{gobble}'
 crossref:
@@ -45,11 +45,11 @@ table1 <- tab1 %>%
             by = c("model" = "model_type")) %>% 
   relocate(model_name, mean_loo, t_dif) %>% 
   mutate(mean_loo = signif(mean_loo,4),
-         t_dif = signif(t_dif,2)) %>% 
+         t_dif = -1*signif(t_dif,2)) %>% 
   select(-model) %>% 
   rename(Model = model_name,
          `Mean lppd` = mean_loo,
-         `t-statistic pairwise difference from best model` = t_dif)
+         `z-statistic pairwise difference from best model` = t_dif)
 
 
 ```
@@ -57,13 +57,13 @@ table1 <- tab1 %>%
 ```{r tableS1, echo=FALSE, message=FALSE,warning=FALSE}
 
 kable(table1,
-      caption = "The summary results of a 10-fold targeted cross-validation where all observations from a random sample of years are predicted when left-out of the model training set. The best model is the same as the model identified as the best by the approximate leave-one-out comparison reported in the main paper.")
+      caption = "Table S1. The summary results of a 10-fold targeted cross-validation where all observations from a random sample of years are predicted when left-out of the model training set. The best model is the same as the model identified as the best by the approximate leave-one-out comparison reported in the main paper.")
 
 ```
 
 {{< pagebreak >}}
 
-```{r figs1, echo=FALSE, message=FALSE,warning=FALSE, fig.dpi=300, fig.cap="Covariate effects from all 5 models."}
+```{r figs1, echo=FALSE, message=FALSE,warning=FALSE, fig.dpi=300, fig.cap="Figure S1. Covariate effects from all 5 models."}
 
 
 print(fig1)
@@ -71,7 +71,7 @@ print(fig1)
 
 {{< pagebreak >}}
 
-```{r fig2, echo=FALSE, message=FALSE,warning=FALSE, fig.dpi=300, fig.cap="Local effect of 3-month SPEI (top plot) and 3-month SPEI 1-year lagged (bottom plot) from the Climate [spring+sprin 1-year lagged] model. The general pattern of strongest positive effects in the core of the range is very similar to the pattern for the combined effect of local 15-month SPEI that had higher predictive accuracy."}
+```{r fig2, echo=FALSE, message=FALSE,warning=FALSE, fig.dpi=300, fig.cap="Figure S2. Local effect of 3-month SPEI (top plot) and 3-month SPEI 1-year lagged (bottom plot) from the Climate [spring+sprin 1-year lagged] model. The general pattern of strongest positive effects in the core of the range is very similar to the pattern for the combined effect of local 15-month SPEI that had higher predictive accuracy."}
 
 
 print(fig2)
@@ -81,7 +81,7 @@ print(fig2)
 
 {{< pagebreak >}}
 
-```{r fig3, echo=FALSE, message=FALSE,warning=FALSE, fig.dpi=300, fig.height=8,fig.cap="Local effect of NAOI 1-year lagged (12-18 months before BBS counts) from the Climate-plus-core [NAOI 1-year lagged] model. The spatial pattern in effects is largely opposite to the pattern for the NAOI from the preceding winter (1-6 months before BBS counts): negative in the core of the species' range and positive in the southern perimeter."}
+```{r fig3, echo=FALSE, message=FALSE,warning=FALSE, fig.dpi=300, fig.height=7.5,fig.cap="Figure S3. Local effect of NAOI 1-year lagged (12-18 months before BBS counts) from the Climate-plus-core [NAOI 1-year lagged] model. The spatial pattern in effects is largely opposite to the pattern for the NAOI from the preceding winter (1-6 months before BBS counts): negative in the core of the species' range and positive in the southern perimeter."}
 
 
 print(fig3)  
@@ -89,7 +89,7 @@ print(fig3)
 
 {{< pagebreak >}}
 
-```{r fig4, echo=FALSE, message=FALSE,warning=FALSE, fig.dpi=300, fig.height=8, fig.cap="Population trajectories and trends from all of the models compared in the paper. Long-term trends are very similar across all models, and the short-term effects from all covariate models (all models except the base model) are all very similar."}
+```{r fig4, echo=FALSE, message=FALSE,warning=FALSE, fig.dpi=300, fig.height=7.5, fig.cap="Figure S4. Population trajectories and trends from all of the models compared in the paper. Long-term trends are very similar across all models, and the short-term effects from all covariate models (all models except the base model) are all very similar."}
 
 
 print(fig4)  
